@@ -8,12 +8,22 @@
 [![Version](https://img.shields.io/badge/Version-4.0.0--Spatial-blueviolet?style=flat-square)](#)
 [![Stack](https://img.shields.io/badge/Stack-Electron%20|%20Node.js%20|%20Llama%203-black?style=flat-square)](#)
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/zakrievahmed129-lgtm/VisionPro-Assistant/main/assets/hero_demo.gif" alt="Aether OS Spatial Experience Demonstration" width="800px" style="border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);" />
+</p>
+
 ---
 
 </div>
 
 ## 💎 The Spatial Experience
 VisionPro Assistant isn't just an application—it's an intelligent membrane that lives above your operating system. Inspired by Apple Vision Pro's "Glassmorphism" aesthetic, it provides instant access to the world's fastest AI via Llama 3 models (Groq).
+
+<p align="center">
+  <a href="https://github.com/zakrievahmed129-lgtm/VisionPro-Assistant/releases/latest">
+    <img src="https://img.shields.io/badge/Download-Latest%20.exe%20v4.0.0-007AFF?style=for-the-badge&logo=windows&logoColor=white&labelColor=1F2937" alt="🚀 Download for Windows" />
+  </a>
+</p>
 
 ### ✨ Key Features
 - **Oracle Rendering Engine**: Fluid, organic typography with motion blur and GPU-accelerated batch rendering (Oracle Frame).
