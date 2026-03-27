@@ -1,0 +1,48 @@
+# Aether-OS — GitHub Repository Filters
+# Professional exclusion list for Electron standalone projects
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build Outputs
+dist/
+out/
+out_builder/
+build/out/
+*.exe
+*.msi
+*.zip
+*.blockmap
+
+# Environment & Private Configuration (CRITICAL)
+.env
+.env.*
+config.json
+/brain/
+/.system_generated/
+/.gemini/
+/.agent/
+
+# Logs & Debugging
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+build_log.txt
+tmp_build_log.txt
+
+# OS Specific
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary Files
+/tmp/
+*.tmp

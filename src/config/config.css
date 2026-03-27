@@ -1,0 +1,454 @@
+/* ═══════════════════════════════════════════════════════════════
+   AETHER-CONFIG — Spatial Glass Panel
+   Apple Vision Pro Configuration Interface
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+    --glass-blur: 30px;
+    --glass-saturation: 210%;
+    --glass-bg: rgba(12, 12, 16, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-border-hover: rgba(255, 255, 255, 0.22);
+    --glass-highlight: rgba(255, 255, 255, 0.06);
+
+    --accent: #007AFF;
+    --accent-glow: rgba(0, 122, 255, 0.35);
+    --success: #32D74B;
+    --error: #FF453A;
+    --text: rgba(255, 255, 255, 0.92);
+    --text-dim: rgba(255, 255, 255, 0.45);
+
+    --shadow-deep: 0 20px 80px rgba(0,0,0,0.5), 0 8px 30px rgba(0,0,0,0.3);
+    --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    background: transparent;
+    color: var(--text);
+    height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── PARTICLE CANVAS ────────────────────────────────────────── */
+#configParticles {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 0; pointer-events: none; opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLASS PANEL
+   ═══════════════════════════════════════════════════════════════ */
+.config-panel {
+    position: relative;
+    width: 400px;
+    padding: 40px 36px 28px;
+    border-radius: 36px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-deep), inset 0 1px 0 var(--glass-highlight);
+    z-index: 10;
+    animation: panelBirth 1s var(--ease-spring);
+    transform-style: preserve-3d;
+    will-change: transform;
+    /* Draggable region */
+    -webkit-app-region: drag;
+}
+
+/* Glass noise texture */
+.config-panel::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 128px;
+    border-radius: inherit; pointer-events: none;
+    z-index: 1; opacity: 0.5; mix-blend-mode: overlay;
+}
+
+/* Specular reflection sweep */
+.config-panel::after {
+    content: ''; position: absolute;
+    top: 0; left: -120%;
+    width: 60%; height: 100%;
+    background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 55%, transparent 70%);
+    transform: skewX(-15deg);
+    pointer-events: none; z-index: 2; border-radius: inherit;
+    animation: configSweep 4s 1.2s ease-in-out;
+}
+
+@keyframes configSweep {
+    0%   { left: -120%; }
+    100% { left: 200%; }
+}
+
+@keyframes panelBirth {
+    0%   { opacity: 0; transform: scale(0.85) translateY(30px); filter: blur(15px); }
+    60%  { opacity: 1; filter: blur(0); }
+    100% { transform: scale(1) translateY(0); }
+}
+
+/* ── Drag Handle ───────────────────────────────────────────── */
+.drag-handle {
+    position: absolute; top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 50px; height: 5px; margin-top: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    -webkit-app-region: drag;
+    z-index: 100;
+    transition: background 0.3s;
+}
+
+.drag-handle:hover { background: rgba(255, 255, 255, 0.4); }
+
+/* ── Close Button ─────────────────────────────────────────── */
+.close-btn {
+    position: absolute; top: 14px; right: 14px;
+    width: 26px; height: 26px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%; color: var(--text-dim);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 100;
+    -webkit-app-region: no-drag;
+    transition: all 0.25s var(--ease-spring);
+}
+
+.close-btn:hover {
+    background: rgba(255, 69, 58, 0.2); border-color: rgba(255, 69, 58, 0.4);
+    color: var(--error); transform: scale(1.15);
+}
+
+.close-btn:active { transform: scale(0.9); }
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER + ANIMATED LOGO
+   ═══════════════════════════════════════════════════════════════ */
+.config-header {
+    text-align: center; margin-bottom: 28px;
+    -webkit-app-region: drag;
+    position: relative; z-index: 5;
+}
+
+.aether-logo {
+    width: 48px; height: 48px;
+    margin: 0 auto 16px;
+    position: relative;
+}
+
+.logo-core {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 10px; height: 10px;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(255,255,255,0.8), 0 0 30px var(--accent-glow);
+    animation: corePulse 2s ease-in-out infinite;
+}
+
+.logo-ring {
+    position: absolute; inset: 0;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    animation: ringOrbit 3s linear infinite;
+}
+
+.logo-ring::after {
+    content: '';
+    position: absolute; top: -3px; left: 50%;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+@keyframes corePulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(255,255,255,0.8), 0 0 30px var(--accent-glow); }
+    50%      { box-shadow: 0 0 20px rgba(255,255,255,1), 0 0 50px var(--accent-glow); }
+}
+
+@keyframes ringOrbit {
+    to { transform: rotate(360deg); }
+}
+
+.config-header h1 {
+    font-size: 26px; font-weight: 700;
+    background: linear-gradient(135deg, #fff 0%, #8a8a8e 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.3px;
+}
+
+.subtitle {
+    font-size: 13px; color: var(--text-dim);
+    letter-spacing: 0.5px; margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FORM FIELDS
+   ═══════════════════════════════════════════════════════════════ */
+.config-form {
+    display: flex; flex-direction: column; gap: 18px;
+    position: relative; z-index: 5;
+    -webkit-app-region: no-drag;
+}
+
+.field-group {
+    display: flex; flex-direction: column; gap: 8px;
+}
+
+.field-group label {
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.required { color: var(--error); font-size: 14px; }
+.optional { color: var(--text-dim); font-size: 10px; text-transform: none; font-weight: 400; letter-spacing: normal; }
+
+.input-wrapper {
+    position: relative; display: flex; align-items: center;
+}
+
+.input-wrapper input {
+    flex: 1; width: 100%;
+    padding: 14px 44px 14px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', 'Roboto Mono', monospace;
+    font-size: 13px; letter-spacing: 0.5px;
+    transition: all 0.3s var(--ease-spring);
+    -webkit-app-region: no-drag;
+    outline: none;
+}
+
+.input-wrapper input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1), 0 0 20px rgba(0, 122, 255, 0.08);
+}
+
+.input-wrapper input.valid {
+    border-color: var(--success);
+    box-shadow: 0 0 0 3px rgba(50, 215, 75, 0.1);
+}
+
+.input-wrapper input.invalid {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(255, 69, 58, 0.1);
+    animation: inputShake 0.4s var(--ease-spring);
+}
+
+@keyframes inputShake {
+    0%, 100% { transform: translateX(0); }
+    25%      { transform: translateX(-6px); }
+    75%      { transform: translateX(6px); }
+}
+
+.input-wrapper input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+    font-family: inherit;
+}
+
+/* Visibility Toggle */
+.toggle-vis {
+    position: absolute; right: 8px;
+    width: 30px; height: 30px;
+    background: transparent; border: none;
+    color: var(--text-dim); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+    -webkit-app-region: no-drag;
+}
+
+.toggle-vis:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
+/* Skip Button */
+.skip-btn {
+    display: flex; align-items: center; gap: 6px;
+    align-self: flex-end;
+    background: transparent; border: none;
+    color: var(--text-dim); font-size: 11px;
+    cursor: pointer; padding: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.2s var(--ease-spring);
+    -webkit-app-region: no-drag;
+}
+
+.skip-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+/* Tavily disabled state */
+.field-group.disabled .input-wrapper input {
+    opacity: 0.3; pointer-events: none;
+}
+
+.field-group.disabled label { opacity: 0.3; }
+.field-group.disabled .skip-btn { display: none; }
+.field-group.disabled .toggle-vis { display: none; }
+
+.field-group.disabled::after {
+    content: '✓ Recherche web désactivée';
+    font-size: 11px; color: var(--text-dim);
+    align-self: center; margin-top: 4px;
+}
+
+/* ── Status Line ───────────────────────────────────────────── */
+.status-line {
+    font-size: 12px; text-align: center;
+    min-height: 18px;
+    transition: all 0.3s var(--ease-spring);
+}
+
+.status-line.error { color: var(--error); }
+.status-line.success { color: var(--success); }
+
+/* ═══════════════════════════════════════════════════════════════
+   SEGMENTED CONTROL — Adaptive Engine Toggle
+   ═══════════════════════════════════════════════════════════════ */
+.perf-selector-group {
+    padding-top: 4px;
+}
+
+.segmented-control {
+    position: relative;
+    display: flex;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 3px;
+    gap: 0;
+}
+
+.seg-btn {
+    flex: 1; position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 8px;
+    background: transparent; border: none;
+    color: var(--text-dim);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    border-radius: 11px;
+    transition: color 0.3s var(--ease-spring);
+    -webkit-app-region: no-drag;
+}
+
+.seg-btn:hover:not(.active) { color: rgba(255,255,255,0.7); }
+.seg-btn.active { color: white; }
+
+.seg-slider {
+    position: absolute; top: 3px; left: 3px;
+    width: calc(50% - 3px); height: calc(100% - 6px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 11px;
+    transition: transform 0.35s var(--ease-spring);
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.seg-slider.right {
+    transform: translateX(100%);
+}
+
+.perf-hint {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 2px;
+    transition: all 0.3s;
+    min-height: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTIVATE BUTTON
+   ═══════════════════════════════════════════════════════════════ */
+.activate-btn {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+    color: #000; font-weight: 700; font-size: 14px;
+    border: none; border-radius: 16px;
+    cursor: pointer; position: relative; overflow: hidden;
+    transition: all 0.3s var(--ease-spring);
+    -webkit-app-region: no-drag;
+}
+
+.activate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255,255,255,0.15), 0 0 60px rgba(255,255,255,0.05);
+}
+
+.activate-btn:active { transform: scale(0.97); }
+
+.activate-btn.loading {
+    pointer-events: none;
+}
+
+.activate-btn.loading .btn-text { opacity: 0; }
+.activate-btn.loading .btn-loader { opacity: 1; }
+
+.btn-text { transition: opacity 0.2s; }
+
+.btn-loader {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    opacity: 0; transition: opacity 0.2s;
+}
+
+.loader-dot {
+    width: 6px; height: 6px;
+    background: #000; border-radius: 50%;
+    animation: loaderBounce 1.2s infinite;
+}
+
+.loader-dot:nth-child(2) { animation-delay: 0.15s; }
+.loader-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes loaderBounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+    40%           { transform: scale(1); opacity: 1; }
+}
+
+.activate-btn.success {
+    background: var(--success) !important;
+    color: white !important;
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+.config-footer {
+    text-align: center; margin-top: 20px;
+    position: relative; z-index: 5;
+    -webkit-app-region: no-drag;
+}
+
+.config-footer a {
+    color: var(--accent); text-decoration: none;
+    font-size: 11.5px; font-weight: 500;
+    opacity: 0.7; transition: opacity 0.2s;
+}
+
+.config-footer a:hover { opacity: 1; }
+.sep { color: var(--text-dim); font-size: 10px; margin: 0 6px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   VANISH EXIT SEQUENCE
+   ═══════════════════════════════════════════════════════════════ */
+.config-panel.vanishing {
+    animation: panelVanish 0.8s var(--ease-spring) forwards;
+}
+
+@keyframes panelVanish {
+    0%   { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+    40%  { opacity: 0.6; transform: scale(1.03) translateY(-10px); filter: blur(2px); }
+    100% { opacity: 0; transform: scale(0.9) translateY(-40px); filter: blur(20px); }
+}

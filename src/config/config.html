@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aether-Config</title>
+    <link rel="stylesheet" href="config.css">
+</head>
+<body>
+
+    <!-- Particle Field -->
+    <canvas id="configParticles"></canvas>
+
+    <!-- Draggable Glass Panel -->
+    <div class="config-panel" id="configPanel">
+
+        <!-- Drag Handle (invisible, top region) -->
+        <div class="drag-handle"></div>
+
+        <!-- Close Button -->
+        <button class="close-btn" id="closeBtn" title="Fermer">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="1" y1="1" x2="11" y2="11"></line>
+                <line x1="11" y1="1" x2="1" y2="11"></line>
+            </svg>
+        </button>
+
+        <!-- Header -->
+        <div class="config-header">
+            <div class="aether-logo">
+                <div class="logo-ring"></div>
+                <div class="logo-core"></div>
+            </div>
+            <h1>Aether-OS</h1>
+            <p class="subtitle">Configuration Spatiale</p>
+        </div>
+
+        <!-- Form -->
+        <div class="config-form" id="configForm">
+
+            <!-- Groq API Key (required) -->
+            <div class="field-group">
+                <label for="groqKey">Groq API Key <span class="required">•</span></label>
+                <div class="input-wrapper">
+                    <input type="password" id="groqKey" placeholder="gsk_..." autocomplete="off" spellcheck="false" />
+                    <button class="toggle-vis" id="toggleGroq" title="Afficher">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tavily API Key (optional) -->
+            <div class="field-group" id="tavilyGroup">
+                <label for="tavilyKey">Tavily Search Key <span class="optional">(optionnel)</span></label>
+                <div class="input-wrapper">
+                    <input type="password" id="tavilyKey" placeholder="tvly-..." autocomplete="off" spellcheck="false" />
+                    <button class="toggle-vis" id="toggleTavily" title="Afficher">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+                <button class="skip-btn" id="skipTavily">
+                    <span>Passer la recherche web</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Adaptive Engine Toggle -->
+            <div class="field-group perf-selector-group">
+                <label>Moteur de Rendu</label>
+                <div class="segmented-control" id="perfToggle">
+                    <button class="seg-btn active" data-mode="ultra" id="segUltra">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        <span>Spatial Ultra</span>
+                    </button>
+                    <button class="seg-btn" data-mode="eco" id="segEco">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66L7 18c5-1 7-5.5 7-10"></path><path d="M14 2c-1 3-2 6-2 9"></path></svg>
+                        <span>Eco Glass</span>
+                    </button>
+                    <div class="seg-slider" id="segSlider"></div>
+                </div>
+                <p class="perf-hint" id="perfHint">Toutes les micro-animations et effets GPU activés</p>
+            </div>
+
+            <!-- Status -->
+            <div class="status-line" id="statusLine"></div>
+
+            <!-- Activate Button -->
+            <button class="activate-btn" id="activateBtn">
+                <span class="btn-text">Activer Aether</span>
+                <div class="btn-loader">
+                    <div class="loader-dot"></div>
+                    <div class="loader-dot"></div>
+                    <div class="loader-dot"></div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="config-footer">
+            <a href="https://console.groq.com/keys" id="groqLink">Obtenir Groq Key →</a>
+            <span class="sep">·</span>
+            <a href="https://app.tavily.com/home" id="tavilyLink">Obtenir Tavily Key →</a>
+        </div>
+    </div>
+
+    <script src="config_renderer.js"></script>
+</body>
+</html>

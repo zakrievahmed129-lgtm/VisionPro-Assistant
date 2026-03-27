@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity - Configuration</title>
+    <style>
+        :root {
+            --accent: #32ff64;
+            --accent-glow: rgba(50, 255, 100, 0.3);
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+            background: #0a0a0a;
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .setup-container {
+            width: 420px;
+            padding: 40px;
+            border-radius: 32px;
+            background: var(--glass);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff 0%, #888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: white;
+            color: black;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .footer {
+            margin-top: 25px;
+        }
+
+        .footer a {
+            color: #007AFF;
+            text-decoration: none;
+            font-size: 13px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .footer a:hover {
+            opacity: 1;
+        }
+
+        .error-msg {
+            color: #FF453A;
+            font-size: 12px;
+            margin-top: 12px;
+            min-height: 18px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .error-msg.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <h1>Antigravity</h1>
+        <p>Entrez votre clé API Groq pour activer<br>l'expérience Luau débridée.</p>
+        
+        <div class="input-group">
+            <input type="password" id="apiKey" placeholder="gsk_..." spellcheck="false">
+            <button id="connectBtn">Activer le Protocole</button>
+        </div>
+        
+        <div id="errorMsg" class="error-msg"></div>
+        
+        <div class="footer">
+            <a href="https://console.groq.com/keys" target="_blank">Obtenir une clé API →</a>
+        </div>
+    </div>
+
+    <script src="setup.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{
+  "name": "visionpro-assistant",
+  "version": "4.0.0",
+  "description": "Premium Spatial AI Assistant — VisionPro Edition",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:clean": "rimraf dist build/out out",
+    "build:win": "npm run build:clean && electron-builder --win portable",
+    "prebuild": "npm run build:clean"
+  },
+  "keywords": [
+    "electron",
+    "spatial",
+    "ai",
+    "assistant",
+    "os",
+    "portfolio"
+  ],
+  "author": "Votre Nom",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.1",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.11.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "rimraf": "^5.0.5"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "groq-sdk": "^0.3.3"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "name": "Antigravity",
+        "asar": true
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "Antigravity"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "win32"
+          ]
+        }
+      ]
+    }
+  }
+}

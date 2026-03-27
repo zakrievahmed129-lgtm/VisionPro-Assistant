@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aether-OS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Particle Field (Depth Layer 0) -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- GENESIS: Big Bang Overlay -->
+    <div class="genesis-overlay" id="genesisOverlay">
+        <div class="genesis-glow" id="genesisGlow"></div>
+        <div class="genesis-ring" id="genesisRing"></div>
+    </div>
+
+    <!-- Detection zone -->
+    <div class="trigger-zone" id="triggerZone"></div>
+
+    <div class="container" id="container">
+        
+        <!-- Response Pill (Depth Layer 3) -->
+        <div class="glass-pill response-pill" id="responsePill">
+            <div class="shockwave-layer" id="shockwaveLayer"></div>
+            <div class="response-content" id="responseArea"></div>
+        </div>
+
+        <!-- Search Pill (Depth Layer 2) -->
+        <div class="glass-pill search-pill" id="searchPill">
+            <div class="search-content">
+                <div class="aether-spinner">
+                    <div class="spinner-ring"></div>
+                    <div class="spinner-ring delay"></div>
+                </div>
+                <div class="search-text-container">
+                    <span id="searchStep">Initialisation...</span>
+                </div>
+            </div>
+            <div class="sweep-light"></div>
+        </div>
+
+        <!-- Input Pill (Depth Layer 1) -->
+        <div class="glass-pill input-pill" id="inputPill">
+            <div class="glow-ring"></div>
+            
+            <input type="text" id="input" placeholder="Demande-moi n'importe quoi..." autocomplete="off" spellcheck="false" />
+            
+            <div class="actions">
+                <button id="captureBtn" class="action-btn" title="Analyser l'écran">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </button>
+                <button id="luauHookBtn" class="action-btn" title="Envoyer Code Luau">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                </button>
+                <button id="sendBtn" class="action-btn primary" title="Envoyer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+    </div>
+    
+    <script src="renderer.js"></script>
+</body>
+</html>
