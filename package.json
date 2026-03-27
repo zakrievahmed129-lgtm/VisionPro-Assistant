@@ -5,6 +5,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
+    "build": "npm run build:win",
     "build:clean": "rimraf dist build/out out",
     "build:win": "npm run build:clean && electron-builder --win portable",
     "prebuild": "npm run build:clean"
@@ -17,7 +18,7 @@
     "os",
     "portfolio"
   ],
-  "author": "Votre Nom",
+  "author": "VisionPro Dev Team",
   "license": "MIT",
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
@@ -42,7 +43,7 @@
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "Antigravity"
+            "name": "VisionPro-Assistant"
           }
         },
         {
