@@ -6,10 +6,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-white?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/Version-4.0.0--Spatial-blueviolet?style=flat-square)](#)
-[![Stack](https://img.shields.io/badge/Stack-Electron%20|%20Node.js%20|%20Llama%203-black?style=flat-square)](#)
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/zakrievahmed129-lgtm/VisionPro-Assistant/main/assets/hero_demo.gif" alt="Aether OS Spatial Experience Demonstration" width="800px" style="border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);" />
+  <img src="https://raw.githubusercontent.com/zakrievahmed129-lgtm/VisionPro-Assistant/main/assets/hero_demo.gif" alt="VisionPro Assistant Spatial Experience" width="800px" style="border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);" />
 </p>
 
 ---
