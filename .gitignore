@@ -7,10 +7,11 @@ package-lock.json
 
 # Build Outputs
 dist/
+!dist/*.exe
 out/
 out_builder/
 build/out/
-*.exe
+# *.exe (Specific release allowed via negation above)
 *.msi
 *.zip
 *.blockmap
