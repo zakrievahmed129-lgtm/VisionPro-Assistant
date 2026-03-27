@@ -34,6 +34,6 @@ win:
 
 # Portable (The Definitive "Magic" Edition)
 portable:
-  artifactName: "Aether-OS-Portable.${ext}"
+  artifactName: "VisionPro-Assistant-v4.0.${ext}"
   requestExecutionLevel: "user"
   unpackDirName: "aether-os-data"

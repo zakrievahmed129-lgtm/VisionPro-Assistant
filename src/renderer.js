@@ -25,21 +25,21 @@ const MIN_SEARCH_ANIM = 2200;
 let conversationHistory = [];
 
 const SEARCH_PHASES = [
-    "🔍 Recherche en cours...",
-    "📡 Analyse des sources...",
-    "🧬 Extraction des entités...",
-    "⚡ Vérification croisée...",
-    "✨ Synthèse en cours..."
+    "🔍 Searching...",
+    "📡 Analyzing sources...",
+    "🧬 Extracting entities...",
+    "⚡ Cross-verifying...",
+    "✨ Synthesizing response..."
 ];
 
-const SYSTEM_PROMPT = `Tu es Aether, un agent système de niveau production sur le PC d'Ahmed. Tu as un accès DIRECT au Terminal PowerShell et à Internet en temps réel.
+const SYSTEM_PROMPT = `You are Aether, a production-grade system agent. You have DIRECT access to the PowerShell Terminal and real-time Internet.
 
-RÈGLES ABSOLUES :
-1. Si tu n'as pas l'info EXACTE en mémoire (tout après 2023), tu DOIS appeler search_web IMMÉDIATEMENT. Ne propose JAMAIS de le faire — FAIS-LE.
-2. Après une recherche, tu LIS les résultats et SYNTHÉTISES : faits, dates, détails concrets. Ne dis JAMAIS "allez voir sur le site".
-3. Si une commande terminal échoue, ANALYSE l'erreur et corrige-la immédiatement.
-4. Code complet, optimisé, prêt à copier. Zéro placeholder.
-5. Sois direct, technique, rapide.`;
+ABSOLUTE RULES:
+1. If you don't have EXACT info in memory (all post-2023), you MUST call search_web IMMEDIATELY. Never suggest it — DO IT.
+2. After a search, READ the results and SYNTHESIZE: facts, dates, concrete details. NEVER say "visit the website".
+3. If a terminal command fails, ANALYZE the error and fix it immediately.
+4. Provide complete, optimized code ready to copy. Zero placeholders.
+5. Be direct, technical, and fast. Reflect a premium spatial OS persona.`;
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
@@ -55,9 +55,9 @@ async function initEnv() {
             // Apply Performance Mode
             if (config.PERF_MODE === 'eco') {
                 document.body.classList.add('perf-eco');
-                console.log('🍃 [Aether] Mode Eco Glass activé (Optimisation CPU).');
+                console.log('🍃 [Aether] Eco Glass mode activated (CPU Optimization).');
             } else {
-                console.log('🚀 [Aether] Mode Spatial Ultra activé (GPU Max).');
+                console.log('🚀 [Aether] Spatial Ultra mode activated (GPU Max).');
             }
         }
     }
@@ -593,28 +593,28 @@ async function executeTool(name, args) {
     console.log(`🛠️ [Tool] ${name}`, args);
     try {
         if (name === 'run_terminal_command') {
-            setSearchProgress(true, '⚡ Exécution système...');
+            setSearchProgress(true, '⚡ Executing system command...');
             const res = await ipcRenderer.invoke('run-command', args.command);
             setSearchProgress(false);
             return res.success
                 ? `[OK] STDOUT:\n${res.stdout}\nSTDERR:\n${res.stderr}`
-                : `[ÉCHEC] CMD: ${args.command}\nERREUR: ${res.error || res.stderr}\n\nAnalyse et corrige.`;
+                : `[FAILED] CMD: ${args.command}\nERROR: ${res.error || res.stderr}\n\nAnalyze and fix.`;
         }
         if (name === 'search_web') {
-            setSearchProgress(true, '🔍 Recherche Tavily...');
+            setSearchProgress(true, '🔍 Searching Tavily...');
             const t0 = Date.now();
             const res = await ipcRenderer.invoke('web-search', { query: args.query, apiKey: TAVILY_API_KEY });
             const wait = MIN_SEARCH_ANIM - (Date.now() - t0);
             if (wait > 0) await new Promise(r => setTimeout(r, wait));
             if (res.success && res.data) spawnFaviconBubbles(res.data.map(r => r.url).filter(Boolean));
             setSearchProgress(false);
-            return res.success ? JSON.stringify(res.data) : `Erreur Tavily: ${res.error}`;
+            return res.success ? JSON.stringify(res.data) : `Tavily Error: ${res.error}`;
         }
         if (name === 'read_web_page') {
-            setSearchProgress(true, '📖 Lecture de page...');
+            setSearchProgress(true, '📖 Reading page...');
             const res = await ipcRenderer.invoke('web-read-page', { url: args.url });
             setSearchProgress(false);
-            return res.success ? res.text : `Erreur: ${res.error}`;
+            return res.success ? res.text : `Error: ${res.error}`;
         }
         return await ipcRenderer.invoke('execute-plugin', { name, args });
     } catch (e) {
@@ -638,7 +638,7 @@ async function loadPlugins() {
 function getTools() {
     const core = [
         { type:'function', function:{ name:'run_terminal_command', description:'Exécute une commande PowerShell/CMD.', parameters:{ type:'object', properties:{ command:{type:'string'} }, required:['command'] } }},
-        { type:'function', function:{ name:'search_web', description:'Recherche Internet temps réel. OBLIGATOIRE pour info post-2023.', parameters:{ type:'object', properties:{ query:{type:'string'} }, required:['query'] } }},
+        { type:'function', function:{ name:'search_web', description:'Real-time Internet search. MANDATORY for post-2023 info.', parameters:{ type:'object', properties:{ query:{type:'string'} }, required:['query'] } }},
         { type:'function', function:{ name:'read_web_page', description:'Lit le texte brut d\'une URL.', parameters:{ type:'object', properties:{ url:{type:'string'} }, required:['url'] } }}
     ];
     return [...core, ...loadedPlugins.map(p => ({ type:'function', function:{ name:p.name, description:p.description, parameters:p.parameters } }))];
@@ -648,7 +648,7 @@ function getTools() {
 // INTENT DETECTION
 // ═══════════════════════════════════════════════════════════════
 
-const SEARCH_KW = ['cherche','recherche','trouve','actualité','actu','news','météo','prix','cours','quelles sont','dernier','récent','en ce moment','aujourd\'hui','cette semaine','résultat','score','match','sorti','sortie','mise à jour','update','combien coûte','what is','latest','search','who is','que se passe','c\'est quoi'];
+const SEARCH_KW = ['search','look up','find','news','weather','price','stock','market','results','score','match','released','latest','who is','what happened','what is','today','this week','update','current','how much','at the moment'];
 function isSearchIntent(p) { const l = p.toLowerCase(); return SEARCH_KW.some(k => l.includes(k)); }
 
 // ═══════════════════════════════════════════════════════════════

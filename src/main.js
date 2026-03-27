@@ -27,7 +27,7 @@ function getApiKey() {
       return data.GROQ_API_KEY || null;
     }
   } catch (e) {
-    console.error("❌ [Main] Erreur lors de la lecture de la config:", e.message);
+    console.error("❌ [Main] Error reading config:", e.message);
   }
   return null;
 }
@@ -52,9 +52,9 @@ function saveApiKey(key) {
       data.PERF_MODE = key.perfMode;
     }
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(data, null, 2));
-    console.log("✅ [Main] Configuration sauvegardée avec succès.");
+    console.log("✅ [Main] Configuration saved successfully.");
   } catch (e) {
-    console.error("❌ [Main] Erreur lors de la sauvegarde de la config:", e.message);
+    console.error("❌ [Main] Error saving config:", e.message);
   }
 }
 let robloxSource = null;
@@ -157,37 +157,37 @@ ipcMain.handle('capture-screen', async () => {
 });
 
 async function captureScreen() {
-  console.log("📸 [Main] Démarrage de la capture d'écran...");
+  console.log("📸 [Main] Starting screen capture...");
   try {
     const sources = await desktopCapturer.getSources({
       types: ['window', 'screen'],
       thumbnailSize: { width: 800, height: 450 } // 800px wide (16:9) pour vitesse maximale
     });
 
-    console.log(`📸 [Main] Sources trouvées: ${sources.length}`);
+    console.log(`📸 [Main] Sources found: ${sources.length}`);
     
     // Priorité: Roblox Studio > Écran Actuel
     let source = sources.find(s => s.name.toLowerCase().includes('roblox studio'));
     
     if (source) {
-      console.log(`📸 [Main] Cible détectée: Roblox Studio`);
+      console.log(`📸 [Main] Target detected: Roblox Studio`);
     } else {
-      console.log(`📸 [Main] Roblox non trouvé, fallback sur l'écran principal...`);
+      console.log(`📸 [Main] Roblox not found, falling back to primary screen...`);
       source = sources.find(s => s.id.startsWith('screen:') || s.id.startsWith('window:')) || sources[0];
     }
 
     if (!source || !source.thumbnail) {
-      throw new Error('Aucune image n\'a pu être extraite des sources');
+      throw new Error('Could not extract images from sources');
     }
 
-    console.log("📸 [Main] Conversion JPEG (ZÉRO DISQUE - RAM UNIQUEMENT)...");
+    console.log("📸 [Main] JPEG Conversion (ZERO DISK - RAM ONLY)...");
     const jpegBuffer = source.thumbnail.toJPEG(30); // Qualité 30 pour transfert IPC instantané
     
-    console.log(`📸 [Main] Capture terminée (${Math.round(jpegBuffer.length / 1024)} KB)`);
+    console.log(`📸 [Main] Capture complete (${Math.round(jpegBuffer.length / 1024)} KB)`);
     return jpegBuffer.toString('base64');
 
   } catch (err) {
-    console.error("❌ [Main] Erreur fatale lors de la capture:", err);
+    console.error("❌ [Main] Fatal error during capture:", err);
     throw err;
   }
 }
@@ -207,10 +207,10 @@ ipcMain.handle('run-command', async (_, command) => {
   // Basic injection protection: block chained destructive patterns
   const blocked = ['rm -rf /', 'format c:', 'del /f /s /q c:\\'];
   if (blocked.some(b => command.toLowerCase().includes(b))) {
-    return { success: false, error: 'Commande bloquée pour raison de sécurité.', stdout: '', stderr: '' };
+    return { success: false, error: 'Command blocked for security reasons.', stdout: '', stderr: '' };
   }
 
-  console.log(`💻 [Terminal] Exécution: ${command}`);
+  console.log(`💻 [Terminal] Executing: ${command}`);
   return new Promise((resolve) => {
     exec(command, { shell: 'powershell.exe', timeout: 30000 }, (error, stdout, stderr) => {
       resolve({
@@ -237,7 +237,7 @@ ipcMain.handle('load-plugins', async () => {
   try {
     if (!fs.existsSync(PLUGINS_DIR)) {
       fs.mkdirSync(PLUGINS_DIR, { recursive: true });
-      console.log('🔌 [Plugins] Dossier créé:', PLUGINS_DIR);
+      console.log('🔌 [Plugins] Directory created:', PLUGINS_DIR);
       return [];
     }
 
@@ -252,23 +252,23 @@ ipcMain.handle('load-plugins', async () => {
         const plugin = require(pluginPath);
 
         if (plugin.name && plugin.description && plugin.execute) {
-          plugins.push({
-            name: plugin.name,
-            description: plugin.description,
-            parameters: plugin.parameters || { type: 'object', properties: {}, required: [] }
-          });
-          console.log(`🔌 [Plugin] Chargé: ${plugin.name} (${file})`);
+            plugins.push({
+              name: plugin.name,
+              description: plugin.description,
+              parameters: plugin.parameters || { type: 'object', properties: {}, required: [] }
+            });
+            console.log(`🔌 [Plugin] Loaded: ${plugin.name} (${file})`);
+          }
+        } catch (e) {
+          console.error(`🔌 [Plugin] Error loading ${file}:`, e.message);
         }
-      } catch (e) {
-        console.error(`🔌 [Plugin] Erreur chargement ${file}:`, e.message);
       }
-    }
 
-    return plugins;
-  } catch (e) {
-    console.error('🔌 [Plugins] Erreur scan:', e.message);
-    return [];
-  }
+      return plugins;
+    } catch (e) {
+      console.error('🔌 [Plugins] Scan error:', e.message);
+      return [];
+    }
 });
 
 /**
@@ -284,9 +284,9 @@ ipcMain.handle('execute-plugin', async (_, { name, args }) => {
         return String(result);
       }
     }
-    return `[ERREUR] Plugin "${name}" non trouvé.`;
+    return `[ERROR] Plugin "${name}" not found.`;
   } catch (e) {
-    return `[ERREUR PLUGIN] ${e.message}`;
+    return `[PLUGIN ERROR] ${e.message}`;
   }
 });
 
@@ -316,7 +316,7 @@ ipcMain.handle('get-perf-mode', () => {
 // ═══════════════════════════════════════════════════════════════
 
 ipcMain.handle('web-search', async (_, { query, apiKey }) => {
-  console.log(`🔍 [Main] Recherche Web: ${query}`);
+  console.log(`🔍 [Main] Web Search: ${query}`);
   try {
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -332,13 +332,13 @@ ipcMain.handle('web-search', async (_, { query, apiKey }) => {
     const data = await response.json();
     return { success: true, data: data.results };
   } catch (err) {
-    console.error("❌ [Main] Erreur Recherche:", err.message);
+    console.error("❌ [Main] Search Error:", err.message);
     return { success: false, error: err.message };
   }
 });
 
 ipcMain.handle('web-read-page', async (_, { url }) => {
-  console.log(`📖 [Main] Lecture Page: ${url}`);
+  console.log(`📖 [Main] Reading Page: ${url}`);
   try {
     const response = await fetch(url);
     const html = await response.text();
@@ -352,7 +352,7 @@ ipcMain.handle('web-read-page', async (_, { url }) => {
       .slice(0, 10000);
     return { success: true, text };
   } catch (err) {
-    console.error("❌ [Main] Erreur Lecture:", err.message);
+    console.error("❌ [Main] Read Error:", err.message);
     return { success: false, error: err.message };
   }
 });

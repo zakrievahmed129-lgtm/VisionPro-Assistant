@@ -12,54 +12,54 @@
 
 </div>
 
-## 💎 L'Expérience Spatiale
-VisionPro Assistant n'est pas une simple application, c'est une membrane intelligente qui vit au-dessus de votre système d'exploitation. Inspirée par l'esthétique "Glassmorphism" de l'Apple Vision Pro, elle offre un accès instantané à l'IA la plus rapide du monde via les modèles Llama 3 (Groq).
+## 💎 The Spatial Experience
+VisionPro Assistant isn't just an application—it's an intelligent membrane that lives above your operating system. Inspired by Apple Vision Pro's "Glassmorphism" aesthetic, it provides instant access to the world's fastest AI via Llama 3 models (Groq).
 
-### ✨ Fonctionnalités Clés
-- **Oracle Rendering Engine** : Une typographie fluide, organique, avec un flou de mouvement (Motion Blur) et un rendu par rafales GPU (Oracle Frame).
-- **Vision Autonome** : Analysez votre écran en 30ms grâce au moteur de capture RAM-uniquement.
-- **Protocoles de Recherche** : Intégration native de Tavily pour une synthèse d'actualité en temps réel sans latence.
-- **Modularité "Plugin"** : Architecture ouverte permettant d'étendre les capacités de l'OS via des scripts JS simples.
+### ✨ Key Features
+- **Oracle Rendering Engine**: Fluid, organic typography with motion blur and GPU-accelerated batch rendering (Oracle Frame).
+- **Autonomous Vision**: Analyze your screen in under 30ms using a RAM-only capture engine.
+- **Search Protocols**: Native Tavily integration for real-time news synthesis without latency.
+- **Plugin Modularity**: Open architecture allowing for OS expansion via simple JS scripts.
 
 ---
 
-## ⚡ Performance Stratifiée
-VisionPro Assistant s'adapte à votre matériel via deux profils de rendu distincts :
+## ⚡ Layered Performance
+VisionPro Assistant adapts to your hardware through two distinct rendering profiles:
 
-| Mode | Cible | Caractéristiques |
+| Mode | Target | Features |
 | :--- | :--- | :--- |
-| **Spatial Ultra** | GPU (RTX/Core) | Full Glassmorphism, Tilt 3D, Particules dynamiques (60 FPS). |
-| **Eco Glass** | CPU Standard | Optimisé pour PC portables, animations simplifiées, consommation réduite. |
+| **Spatial Ultra** | GPU (RTX/Core) | Full Glassmorphism, 3D Tilt, dynamic particles (Solid 60 FPS). |
+| **Eco Glass** | Standard CPU | Optimized for laptops, simplified animations, reduced power consumption. |
 
 ---
 
-## 📦 Installation & Déploiement
+## 📦 Installation & Deployment
 
-### Prérequis
+### Prerequisites
 - [Node.js](https://nodejs.org/) (v18+)
-- Une clé API [Groq](https://console.groq.com/)
-- Une clé API [Tavily](https://tavily.com/) (Optionnel, pour la recherche web)
+- A [Groq](https://console.groq.com/) API Key
+- A [Tavily](https://tavily.com/) API Key (Optional, for web search)
 
-### Lancement Rapide
+### Quick Start
 ```bash
-# Cloner le dépôt
-git clone https://github.com/votre-username/VisionPro-Assistant.git
+# Clone the repository
+git clone https://github.com/zakrievahmed129-lgtm/VisionPro-Assistant.git
 cd VisionPro-Assistant
 
-# Installer les dépendances
+# Install dependencies
 npm install
 
-# Lancer l'expérience
+# Launch the experience
 npm start
 ```
 
 ---
 
-## 🛡️ Sécurité & Transparence
-- **Architecture Locale** : Vos clés API ne quittent jamais votre machine. Elles sont stockées dans un fichier `config.json` sécurisé en local (exclu de Git).
-- **Zéro-Signature** : L'exécutable portable n'est pas signé numériquement pour garantir que le binaire que vous téléchargez correspond exactement au code source ouvert ici.
-- **Audit de Code** : Nous encourageons les utilisateurs à inspecter le dossier `/src` pour vérifier l'absence d'envoi de données tierces.
-- **VirusTotal** : [Rapport d'analyse du binaire .exe](https://www.virustotal.com/gui/file/e0910b4c0e1a6bb469e3ac89a68cee104f2463ecc6f13af14e47135177e23ff3?nocache=1) (67/70 Scanners OK).
+## 🛡️ Security & Transparency
+- **Local Architecture**: Your API keys never leave your machine. They are stored in a secure local `config.json` file (Git-excluded).
+- **Zero-Signature**: The portable executable is digitally unsigned to ensure the binary you download exactly matches the open-source code provided here.
+- **Code Audit**: Users are encouraged to inspect the `/src` folder to verify no third-party data transmission.
+- **VirusTotal**: [Binary Analysis Report](https://www.virustotal.com/gui/file/e0910b4c0e1a6bb469e3ac89a68cee104f2463ecc6f13af14e47135177e23ff3?nocache=1) (67/70 Scanners OK).
 
 ---
 

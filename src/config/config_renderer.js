@@ -147,8 +147,8 @@ function setPerfMode(mode) {
     dom.segSlider.classList.toggle('right', !isUltra);
     
     dom.perfHint.textContent = isUltra 
-        ? "Toutes les micro-animations et effets GPU activés" 
-        : "Effets visuels allégés pour une fluidité maximale sur CPU";
+        ? "All micro-animations and GPU effects enabled" 
+        : "Lite visual effects for maximum smoothness on CPU";
     
     // Preview effect on the config panel itself
     if (mode === 'eco') {
@@ -266,13 +266,13 @@ dom.activateBtn.addEventListener('click', async () => {
     // Validate format
     if (!isValidGroqKey(groqKey)) {
         dom.groqKey.classList.add('invalid');
-        setStatus('Clé Groq invalide. Format : gsk_...', 'error');
+        setStatus('Invalid Groq key. Format: gsk_...', 'error');
         return;
     }
 
     // Loading state
     dom.activateBtn.classList.add('loading');
-    setStatus('Validation en cours...', '');
+    setStatus('Validating...', '');
 
     // Validate against API
     const valid = await validateGroqKey(groqKey);
@@ -281,7 +281,7 @@ dom.activateBtn.addEventListener('click', async () => {
         dom.activateBtn.classList.remove('loading');
         dom.groqKey.classList.remove('valid');
         dom.groqKey.classList.add('invalid');
-        setStatus('Clé Groq rejetée par l\'API. Vérifiez-la.', 'error');
+        setStatus('Groq key rejected by API. Please check it.', 'error');
         return;
     }
 
@@ -290,8 +290,8 @@ dom.activateBtn.addEventListener('click', async () => {
     dom.groqKey.classList.add('valid');
     dom.activateBtn.classList.remove('loading');
     dom.activateBtn.classList.add('success');
-    dom.activateBtn.querySelector('.btn-text').textContent = '✓ Activé';
-    setStatus('Configuration réussie. Lancement...', 'success');
+    dom.activateBtn.querySelector('.btn-text').textContent = '✓ Activated';
+    setStatus('Configuration successful. Launching...', 'success');
 
     // Send keys and performance mode to main process
     ipcRenderer.send('setup-finished', { 

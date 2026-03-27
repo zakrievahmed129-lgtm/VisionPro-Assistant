@@ -7,23 +7,23 @@ document.addEventListener('DOMContentLoaded', () => {
         error: document.getElementById('errorMsg')
     };
 
-    console.log("📋 [Setup] Interface initialisée.");
+    console.log("📋 [Setup] Interface initialized.");
 
     async function validate() {
         const key = ui.input.value.trim();
         
         if (!key) {
-            showError("Veuillez entrer une clé API.");
+            showError("Please enter an API key.");
             return;
         }
 
         if (!key.startsWith('gsk_')) {
-            showError("La clé doit commencer par 'gsk_'.");
+            showError("Key must start with 'gsk_'.");
             return;
         }
 
         ui.btn.disabled = true;
-        ui.btn.innerText = "Vérification...";
+        ui.btn.innerText = "Verifying...";
         ui.error.classList.remove('visible');
 
         try {
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (resp.ok) {
-                ui.btn.innerText = "Connecté !";
+                ui.btn.innerText = "Connected!";
                 ui.btn.style.background = "#32ff64";
                 ui.btn.style.color = "#000";
                 
@@ -51,14 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 1000);
             } else {
                 const data = await resp.json();
-                showError("Clé invalide : " + (data.error?.message || "Vérifiez votre clé."));
+                showError("Invalid key: " + (data.error?.message || "Check your key."));
             }
         } catch (err) {
-            showError("Erreur réseau : Vérifiez votre connexion.");
+            showError("Network error: Check your connection.");
         } finally {
-            if (ui.btn.innerText !== "Connecté !") {
+            if (ui.btn.innerText !== "Connected!") {
                 ui.btn.disabled = false;
-                ui.btn.innerText = "Activer le Protocole";
+                ui.btn.innerText = "Activate Protocol";
             }
         }
     }

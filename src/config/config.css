@@ -298,7 +298,7 @@ body {
 .field-group.disabled .toggle-vis { display: none; }
 
 .field-group.disabled::after {
-    content: '✓ Recherche web désactivée';
+    content: '✓ Web search disabled';
     font-size: 11px; color: var(--text-dim);
     align-self: center; margin-top: 4px;
 }
