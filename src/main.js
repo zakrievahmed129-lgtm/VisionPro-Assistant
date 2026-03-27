@@ -74,13 +74,12 @@ function getTopPosition() {
  */
 function createSetupWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  const winW = 460, winH = 580;
 
   setupWindow = new BrowserWindow({
-    width: winW,
-    height: winH,
-    x: Math.round((width - winW) / 2),
-    y: Math.round((height - winH) / 2),
+    width: width,
+    height: height,
+    x: 0,
+    y: 0,
     frame: false,
     transparent: true,
     hasShadow: false,
@@ -90,12 +89,17 @@ function createSetupWindow() {
       nodeIntegration: true,
       contextIsolation: false
     },
-    backgroundColor: '#00000000'
+    backgroundColor: '#00000000',
+    alwaysOnTop: true
   });
 
   setupWindow.removeMenu();
   setupWindow.loadFile(path.join(__dirname, 'config/config.html'));
   
+  // Dynamic Click-Through: Capture movements across the whole screen 
+  // but let clicks pass through the transparent areas.
+  setupWindow.setIgnoreMouseEvents(true, { forward: true });
+
   setupWindow.once('ready-to-show', () => {
     setupWindow.show();
   });

@@ -9,7 +9,26 @@
 const { ipcRenderer, shell } = require('electron');
 
 // ═══════════════════════════════════════════════════════════════
-// DOM REFERENCES
+// 1. INTERACTION ENGINE (Dynamic Click-Through)
+// Allows global 3D tilt tracking without blocking background clicks
+// ═══════════════════════════════════════════════════════════════
+
+function setupInteraction() {
+    const panel = document.querySelector('.config-panel');
+    if (!panel) return;
+
+    panel.addEventListener('mouseenter', () => {
+        ipcRenderer.send('set-ignore-mouse-events', false);
+    });
+
+    panel.addEventListener('mouseleave', () => {
+        ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+    });
+}
+setupInteraction();
+
+// ═══════════════════════════════════════════════════════════════
+// 2. 3D TILT (LERP-Smoothed Spatial Movement)
 // ═══════════════════════════════════════════════════════════════
 
 const dom = {
@@ -91,23 +110,25 @@ const ConfigParticles = (() => {
 // 2. 3D TILT (Spatial Hover)
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Applies reactive 3D tilt to the glass panel.
- * @param {HTMLElement} el - Target element
- * @param {number} intensity - Rotation multiplier in degrees
- */
-function attachPanelTilt(el, intensity = 4) {
-    el.addEventListener('mousemove', (e) => {
-        const rect = el.getBoundingClientRect();
-        const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-        const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-        el.style.transform = `perspective(1000px) rotateY(${dx * intensity}deg) rotateX(${-dy * intensity}deg)`;
+function attachPanelTilt(el, intensity = 5) {
+    let targetX = 0, targetY = 0;
+    let currentX = 0, currentY = 0;
+    const lerp = 0.1; // Smoothing factor (0.1 = smooth, 1.0 = instant)
+
+    window.addEventListener('mousemove', (e) => {
+        targetX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+        targetY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
     });
-    el.addEventListener('mouseleave', () => {
-        el.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
-        el.style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg)';
-        setTimeout(() => { el.style.transition = ''; }, 600);
-    });
+
+    function update() {
+        // Interpolate towards target
+        currentX += (targetX - currentX) * lerp;
+        currentY += (targetY - currentY) * lerp;
+        
+        el.style.transform = `perspective(1000px) rotateY(${currentX * intensity}deg) rotateX(${-currentY * intensity}deg)`;
+        requestAnimationFrame(update);
+    }
+    update();
 }
 
 // ═══════════════════════════════════════════════════════════════
