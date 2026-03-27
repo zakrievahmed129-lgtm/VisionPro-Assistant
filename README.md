@@ -59,6 +59,7 @@ npm start
 - **Architecture Locale** : Vos clés API ne quittent jamais votre machine. Elles sont stockées dans un fichier `config.json` sécurisé en local (exclu de Git).
 - **Zéro-Signature** : L'exécutable portable n'est pas signé numériquement pour garantir que le binaire que vous téléchargez correspond exactement au code source ouvert ici.
 - **Audit de Code** : Nous encourageons les utilisateurs à inspecter le dossier `/src` pour vérifier l'absence d'envoi de données tierces.
+- **VirusTotal** : [Rapport d'analyse du binaire .exe](https://www.virustotal.com/gui/file/e0910b4c0e1a6bb469e3ac89a68cee104f2463ecc6f13af14e47135177e23ff3?nocache=1) (67/70 Scanners OK).
 
 ---
 
