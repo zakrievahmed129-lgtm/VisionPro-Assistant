@@ -21,6 +21,16 @@
 
     <div class="container" id="container">
         
+        <!-- Oracle Thought-Flow Panel -->
+        <div class="oracle-thoughtflow" id="oracleThoughtflow">
+            <div class="oracle-header">
+                <div class="oracle-pulse-dot"></div>
+                <span class="oracle-label">Oracle Reasoning</span>
+            </div>
+            <div class="oracle-steps" id="oracleSteps"></div>
+            <div class="oracle-progress-bar"><div class="oracle-progress-fill" id="oracleProgressFill"></div></div>
+        </div>
+
         <!-- Response Pill (Depth Layer 3) -->
         <div class="glass-pill response-pill" id="responsePill">
             <div class="shockwave-layer" id="shockwaveLayer"></div>
@@ -55,6 +65,16 @@
                         <polyline points="21 15 16 10 5 21"></polyline>
                     </svg>
                 </button>
+                <button id="oracleToggle" class="action-btn" title="Oracle Mode (Deep Reasoning)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <line x1="12" y1="2" x2="12" y2="6"></line>
+                        <line x1="12" y1="18" x2="12" y2="22"></line>
+                        <line x1="2" y1="12" x2="6" y2="12"></line>
+                        <line x1="18" y1="12" x2="22" y2="12"></line>
+                    </svg>
+                </button>
                 <button id="luauHookBtn" class="action-btn" title="Send Luau Code">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="16 18 22 12 16 6"></polyline>
@@ -73,6 +93,7 @@
     </div>
     
     <script src="services/memory_vault.js"></script>
+    <script src="services/oracle_engine.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>

@@ -92,21 +92,27 @@ initEnv();
 // ═══════════════════════════════════════════════════════════════
 
 const ui = {
-    trigger:        document.getElementById('triggerZone'),
-    container:      document.getElementById('container'),
-    inputPill:      document.getElementById('inputPill'),
-    responsePill:   document.getElementById('responsePill'),
-    responseArea:   document.getElementById('responseArea'),
-    input:          document.getElementById('input'),
-    captureBtn:     document.getElementById('captureBtn'),
-    luauHookBtn:    document.getElementById('luauHookBtn'),
-    sendBtn:        document.getElementById('sendBtn'),
-    searchPill:     document.getElementById('searchPill'),
-    searchStep:     document.getElementById('searchStep'),
-    canvas:         document.getElementById('particleCanvas'),
-    genesisOverlay: document.getElementById('genesisOverlay'),
-    shockwaveLayer: document.getElementById('shockwaveLayer')
+    trigger:            document.getElementById('triggerZone'),
+    container:          document.getElementById('container'),
+    inputPill:          document.getElementById('inputPill'),
+    responsePill:       document.getElementById('responsePill'),
+    responseArea:       document.getElementById('responseArea'),
+    input:              document.getElementById('input'),
+    captureBtn:         document.getElementById('captureBtn'),
+    luauHookBtn:        document.getElementById('luauHookBtn'),
+    sendBtn:            document.getElementById('sendBtn'),
+    searchPill:         document.getElementById('searchPill'),
+    searchStep:         document.getElementById('searchStep'),
+    canvas:             document.getElementById('particleCanvas'),
+    genesisOverlay:     document.getElementById('genesisOverlay'),
+    shockwaveLayer:     document.getElementById('shockwaveLayer'),
+    oracleToggle:       document.getElementById('oracleToggle'),
+    oracleThoughtflow:  document.getElementById('oracleThoughtflow'),
+    oracleSteps:        document.getElementById('oracleSteps'),
+    oracleProgressFill: document.getElementById('oracleProgressFill')
 };
+
+let oracleModeActive = false;
 
 // ═══════════════════════════════════════════════════════════════
 // 1. GENESIS — Cinematic Boot Sequence
@@ -901,6 +907,178 @@ async function askAether(prompt, image = null) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ORACLE MODE — PAOR Deep Reasoning Loop
+// ═══════════════════════════════════════════════════════════════
+
+function oracleUpdateUI(data) {
+    if (!data) return;
+    // Update progress bar
+    if (ui.oracleProgressFill) {
+        ui.oracleProgressFill.style.width = `${Math.round(data.progress * 100)}%`;
+    }
+    // Update step nodes
+    if (data.goalGraph && ui.oracleSteps) {
+        ui.oracleSteps.innerHTML = '';
+        data.goalGraph.forEach((g, i) => {
+            const node = document.createElement('div');
+            node.className = `oracle-step-node ${g.active ? 'active' : ''} ${g.done ? 'done' : ''}`;
+            node.style.animationDelay = `${i * 60}ms`;
+            const icon = document.createElement('div');
+            icon.className = 'oracle-step-icon';
+            icon.textContent = g.done ? '✓' : g.active ? '◎' : `${i + 1}`;
+            const label = document.createElement('span');
+            label.textContent = g.label;
+            node.appendChild(icon);
+            node.appendChild(label);
+            ui.oracleSteps.appendChild(node);
+        });
+    }
+}
+
+function showOraclePanel() {
+    ui.oracleThoughtflow?.classList.add('active');
+    document.body.classList.add('oracle-active');
+}
+
+function hideOraclePanel() {
+    ui.oracleThoughtflow?.classList.remove('active');
+    document.body.classList.remove('oracle-active');
+    if (ui.oracleSteps) ui.oracleSteps.innerHTML = '';
+    if (ui.oracleProgressFill) ui.oracleProgressFill.style.width = '0%';
+}
+
+async function askOracleAether(prompt) {
+    if (isProcessing) return;
+    if (keyPool.length === 0) { setStatus('error'); return; }
+
+    const oracle = window.OracleEngine;
+    if (!oracle) { askAether(prompt); return; }
+
+    setStatus('processing');
+    await vanishResponse();
+    charCountSinceShock = 0;
+    showOraclePanel();
+
+    const session = oracle.createSession(prompt);
+    oracle.on('step', oracleUpdateUI);
+
+    try {
+        // ─── PHASE 1: PLAN ───
+        oracle.logThought('PLAN', 'Decomposing request into sub-tasks...');
+        session.currentPhase = 'PLAN';
+
+        const planPrompt = oracle.buildPlanPrompt(SYSTEM_PROMPT, prompt);
+        const planResult = await streamGroq({
+            model: GROQ_TEXT_MODEL,
+            messages: [{ role: 'user', content: planPrompt }],
+            stream: true,
+            temperature: 0.2
+        });
+
+        let steps = [];
+        try {
+            // Extract JSON from the response (handle markdown code fences)
+            let jsonStr = planResult.text.trim();
+            const jsonMatch = jsonStr.match(/\[.*\]/s);
+            if (jsonMatch) jsonStr = jsonMatch[0];
+            steps = JSON.parse(jsonStr);
+        } catch (_) {
+            // If parsing fails, treat the entire response as a single step
+            steps = [prompt];
+        }
+
+        if (!Array.isArray(steps) || steps.length === 0) steps = [prompt];
+        if (steps.length > 5) steps = steps.slice(0, 5); // Cap at 5
+
+        session.goalGraph = steps.map(s => ({ label: s, done: false, active: false, result: '' }));
+        session.totalSteps = steps.length;
+        oracle.logThought('PLAN', `Decomposed into ${steps.length} sub-tasks.`);
+
+        // ─── PHASE 2: ACT (execute each sub-task) ───
+        session.currentPhase = 'ACT';
+        let allResults = '';
+
+        for (let i = 0; i < steps.length; i++) {
+            oracle.activateGoal(i);
+            oracle.logThought('ACT', `Executing: ${steps[i]}`);
+
+            const actPrompt = oracle.buildActPrompt(SYSTEM_PROMPT, steps[i], allResults);
+            const msgs = [{ role: 'user', content: actPrompt }];
+            const tools = getTools();
+
+            // Inner tool loop for this sub-task
+            for (let loop = 0; loop < MAX_TOOL_LOOPS; loop++) {
+                let text, toolCalls;
+                try {
+                    const result = await streamGroq({
+                        model: GROQ_TEXT_MODEL,
+                        messages: msgs,
+                        tools: loop < MAX_TOOL_LOOPS - 1 ? tools : undefined,
+                        tool_choice: loop < MAX_TOOL_LOOPS - 1 ? 'auto' : undefined,
+                        stream: true,
+                        temperature: 0.15
+                    });
+                    text = result.text;
+                    toolCalls = result.toolCalls;
+                } catch (err) {
+                    if (err.message === 'RETRY_NEXT_KEY') { loop--; continue; }
+                    throw err;
+                }
+
+                if (toolCalls.length > 0) {
+                    msgs.push({ role: 'assistant', content: text || null, tool_calls: toolCalls.map(tc => ({ id: tc.id, type: 'function', function: { name: tc.name, arguments: tc.args } })) });
+                    for (const tc of toolCalls) {
+                        let args = {}; try { args = JSON.parse(tc.args); } catch (_) { }
+                        const result = await executeTool(tc.name, args);
+                        msgs.push({ role: 'tool', tool_call_id: tc.id, name: tc.name, content: String(result) });
+                    }
+                    continue;
+                }
+
+                // Sub-task complete
+                oracle.completeGoal(i, text);
+                allResults += `\n## Sub-task ${i + 1}: ${steps[i]}\n${text}\n`;
+                break;
+            }
+        }
+
+        // ─── PHASE 3: REFLECT & SYNTHESIZE ───
+        session.currentPhase = 'REFLECT';
+        oracle.logThought('REFLECT', 'Self-critique & synthesis...');
+
+        const reflectPrompt = oracle.buildReflectPrompt(SYSTEM_PROMPT, prompt, allResults);
+        await streamGroq({
+            model: GROQ_TEXT_MODEL,
+            messages: [{ role: 'user', content: reflectPrompt }],
+            stream: true,
+            temperature: 0.2
+        });
+
+        // Persist
+        conversationHistory.push({ role: 'user', content: prompt });
+        const finalText = ui.responseArea.textContent;
+        conversationHistory.push({ role: 'assistant', content: finalText });
+        while (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
+        if (window.MemoryVault) {
+            window.MemoryVault.addMessage('default_session', 'user', prompt);
+            window.MemoryVault.addMessage('default_session', 'assistant', finalText);
+        }
+
+        setSearchProgress(false);
+        setStatus('idle');
+
+    } catch (err) {
+        console.error('❌ [Oracle]', err);
+        appendToResponse(`\n⚠️ ${err.message}`);
+        setSearchProgress(false);
+        setStatus('error');
+    } finally {
+        if (isProcessing) { setSearchProgress(false); setStatus('idle'); }
+        setTimeout(() => hideOraclePanel(), 2000);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // EVENTS
 // ═══════════════════════════════════════════════════════════════
 
@@ -918,24 +1096,41 @@ ui.input.addEventListener('input', () => {
     if (ui.input.value.length > 0 && ui.responsePill.classList.contains('has-content') && !isProcessing) hardReset();
 });
 
+function handleUserSubmit(prompt) {
+    if (!prompt || isProcessing) return;
+    if (oracleModeActive) {
+        askOracleAether(prompt);
+    } else {
+        askAether(prompt);
+    }
+}
+
 ui.input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { 
-        const t = ui.input.value.trim(); 
-        if (t && !isProcessing) { 
-            ui.input.value = ''; 
-            askAether(t); 
-        } 
+    if (e.key === 'Enter') {
+        const t = ui.input.value.trim();
+        ui.input.value = '';
+        handleUserSubmit(t);
     }
 });
 
 ui.sendBtn.addEventListener('click', () => {
-    const t = ui.input.value.trim(); if (t) askAether(t); ui.input.value = '';
+    const t = ui.input.value.trim();
+    ui.input.value = '';
+    handleUserSubmit(t);
 });
 
 ui.captureBtn.addEventListener('click', async () => {
     if (isProcessing) return;
     try { setStatus('processing'); const img = await ipcRenderer.invoke('capture-screen'); askAether("Analyse cette capture d'écran.", img); }
     catch(_) { setStatus('error'); }
+});
+
+// Oracle Toggle
+ui.oracleToggle?.addEventListener('click', () => {
+    oracleModeActive = !oracleModeActive;
+    ui.oracleToggle.classList.toggle('oracle-on', oracleModeActive);
+    ui.input.placeholder = oracleModeActive ? 'Oracle Mode — Deep reasoning active...' : 'Ask me anything...';
+    console.log(`🔮 [Oracle] Mode ${oracleModeActive ? 'ACTIVATED' : 'DEACTIVATED'}`);
 });
 
 ui.luauHookBtn?.addEventListener('click', async () => {
@@ -956,4 +1151,4 @@ if (!isEco) {
 
 loadPlugins();
 playGenesisSequence();
-console.log('⚡ AETHER-OS v5.0 — Smart Load Balancer • Memory Vault • Aether Actions — Online.');
+console.log('⚡ AETHER-OS v5.0 — Oracle Infinity • Smart Load Balancer • Memory Vault • Aether Actions — Online.');
