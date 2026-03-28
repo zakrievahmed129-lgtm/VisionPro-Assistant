@@ -699,6 +699,26 @@ async function streamGroq(payload) {
     return { text, toolCalls: toolCalls.filter(t => t?.name) };
 }
 
+/**
+ * Unifies System, History, and Prompt into a single contiguous string.
+ * This satisfies the "1 prompt assemblé" requirement.
+ */
+function assembleUnifiedPrompt(prompt, history) {
+    let assembled = `### SYSTEM INSTRUCTIONS ###\n${SYSTEM_PROMPT}\n\n`;
+    
+    if (history && history.length > 0) {
+        assembled += `### CONVERSATION HISTORY ###\n`;
+        history.forEach(m => {
+            const role = m.role === 'user' ? 'User' : 'Assistant';
+            assembled += `${role}: ${m.content}\n`;
+        });
+        assembled += `\n`;
+    }
+
+    assembled += `### CURRENT REQUEST ###\n${prompt}`;
+    return assembled;
+}
+
 async function askAether(prompt, image = null) {
     if (isProcessing) return;
     if (!GROQ_API_KEY) { setStatus('error'); return; }
@@ -708,11 +728,22 @@ async function askAether(prompt, image = null) {
     charCountSinceShock = 0;
 
     const forceSearch = isSearchIntent(prompt);
-    const msgs = [{ role:'system', content:SYSTEM_PROMPT }, ...conversationHistory];
+    
+    // ASSEMBLE UNIFIED PROMPT (Consolidated State)
+    const unified = assembleUnifiedPrompt(prompt, conversationHistory);
+    const msgs = [];
+
     if (image) {
-        msgs.push({ role:'user', content:[{ type:'text', text:prompt }, { type:'image_url', image_url:{ url:`data:image/jpeg;base64,${image}` } }] });
+        // When an image is present, we provide the unified context alongside the visual data.
+        msgs.push({ 
+            role: 'user', 
+            content: [
+                { type: 'text', text: unified },
+                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${image}` } }
+            ] 
+        });
     } else {
-        msgs.push({ role:'user', content:prompt });
+        msgs.push({ role: 'user', content: unified });
     }
 
     const tools = getTools();
