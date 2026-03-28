@@ -12,8 +12,7 @@ const { ipcRenderer } = require('electron');
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
 
-let GROQ_API_KEYS    = [];
-let currentKeyIndex   = 0;
+let keyPool = [];
 const GROQ_TEXT_MODEL   = 'llama-3.3-70b-versatile';
 const GROQ_VISION_MODEL = 'llama-3.2-90b-vision-preview';
 let TAVILY_API_KEY      = ''; // Security: Loaded from secure config.json at runtime
@@ -49,11 +48,22 @@ async function initEnv() {
     try { 
         const config = await ipcRenderer.invoke('get-env-key');
         if (config) {
-            // Load plural keys with single key fallback
+            // Load plural keys into the Smart Load Balancer pool
             if (Array.isArray(config.GROQ_API_KEYS) && config.GROQ_API_KEYS.length > 0) {
-                GROQ_API_KEYS = config.GROQ_API_KEYS;
+                keyPool = config.GROQ_API_KEYS.map(k => ({ key: k, isCooling: false, unlockTime: 0 }));
             } else if (config.GROQ_API_KEY) {
-                GROQ_API_KEYS = [config.GROQ_API_KEY];
+                keyPool = [{ key: config.GROQ_API_KEY, isCooling: false, unlockTime: 0 }];
+            }
+
+            // Restore Context Memory Vault
+            if (window.MemoryVault) {
+                try {
+                    const ctxMsgs = await window.MemoryVault.getContext('default_session', MAX_HISTORY);
+                    if (ctxMsgs && ctxMsgs.length > 0) {
+                        conversationHistory = ctxMsgs.map(m => ({ role: m.role, content: m.content }));
+                        console.log(`🧠 [MemoryVault] Restored ${conversationHistory.length} messages.`);
+                    }
+                } catch(e) { console.error('Failed to restore memory vault', e); }
             }
 
             TAVILY_API_KEY = config.TAVILY_API_KEY;
@@ -66,8 +76,8 @@ async function initEnv() {
                 console.log('🚀 [VisionPro] Spatial Ultra mode activated (GPU Max).');
             }
             
-            if (GROQ_API_KEYS.length > 0) {
-                console.log(`🔑 [VisionPro] ${GROQ_API_KEYS.length} Groq Key(s) loaded. Rotation active.`);
+            if (keyPool.length > 0) {
+                console.log(`🔑 [VisionPro] ${keyPool.length} Groq Key(s) loaded. Smart Load Balancer active.`);
             }
         }
     }
@@ -665,17 +675,31 @@ function isSearchIntent(p) { const l = p.toLowerCase(); return SEARCH_KW.some(k 
 // AETHER AGENT LOOP
 // ═══════════════════════════════════════════════════════════════
 
+function getAvailableKey() {
+    const now = Date.now();
+    // Libération des clés refroidies
+    keyPool.forEach(k => { if (k.isCooling && now > k.unlockTime) k.isCooling = false; });
+    
+    const available = keyPool.filter(k => !k.isCooling);
+    if (available.length === 0) throw new Error("RATE_LIMIT_WAIT");
+    
+    // Rotation (Shift & Push)
+    const selected = available.shift();
+    keyPool.push(selected);
+    return selected.key;
+}
+
 async function streamGroq(payload) {
-    if (GROQ_API_KEYS.length === 0) throw new Error('No Groq API keys configured. Please check setup.');
+    if (keyPool.length === 0) throw new Error('No Groq API keys configured. Please check setup.');
 
-    // Pick current key from pool
-    const key = GROQ_API_KEYS[currentKeyIndex];
-
-    // Rotate to next key for subsequent calls (Round Robin)
-    if (GROQ_API_KEYS.length > 1) {
-        const prevIdx = currentKeyIndex;
-        currentKeyIndex = (currentKeyIndex + 1) % GROQ_API_KEYS.length;
-        console.log(`🔄 [VisionPro] Request using Key #${prevIdx + 1}. Pool: ${GROQ_API_KEYS.length}`);
+    let key;
+    try {
+        key = getAvailableKey();
+    } catch (e) {
+        if (e.message === 'RATE_LIMIT_WAIT') {
+            throw new Error(`[LoadBalancer] ALL keys on cooldown. Please wait 60s.`);
+        }
+        throw e;
     }
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -683,7 +707,22 @@ async function streamGroq(payload) {
         headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${key}` },
         body: JSON.stringify(payload)
     });
-    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || `Groq ${res.status}`); }
+    
+    if (!res.ok) { 
+        const e = await res.json().catch(()=>({})); 
+        const errMsg = e.error?.message || `Groq ${res.status}`;
+        
+        if (res.status === 429) {
+            console.warn(`[LoadBalancer] HTTP 429 Rate Limit. Quarantining key for 60s...`);
+            const target = keyPool.find(k => k.key === key);
+            if (target) {
+                target.isCooling = true;
+                target.unlockTime = Date.now() + 60000;
+            }
+            throw new Error('RETRY_NEXT_KEY');
+        }
+        throw new Error(errMsg); 
+    }
 
     const reader = res.body.getReader();
     const dec = new TextDecoder('utf-8');
@@ -744,7 +783,7 @@ function assembleUnifiedPrompt(prompt, history) {
 
 async function askAether(prompt, image = null) {
     if (isProcessing) return;
-    if (GROQ_API_KEYS.length === 0) { setStatus('error'); return; }
+    if (keyPool.length === 0) { setStatus('error'); return; }
 
     setStatus('processing');
     await vanishResponse();
@@ -778,14 +817,26 @@ async function askAether(prompt, image = null) {
             if (loop === 0 && forceSearch) toolChoice = { type:'function', function:{ name:'search_web' } };
             const isLast = loop === MAX_TOOL_LOOPS - 1;
 
-            const { text, toolCalls } = await streamGroq({
-                model: image && loop === 0 ? GROQ_VISION_MODEL : GROQ_TEXT_MODEL,
-                messages: msgs,
-                tools: isLast ? undefined : tools,
-                tool_choice: isLast ? undefined : toolChoice,
-                stream: true,
-                temperature: 0.15 + (retries * 0.1)
-            });
+            let text, toolCalls;
+            try {
+                const streamResult = await streamGroq({
+                    model: image && loop === 0 ? GROQ_VISION_MODEL : GROQ_TEXT_MODEL,
+                    messages: msgs,
+                    tools: isLast ? undefined : tools,
+                    tool_choice: isLast ? undefined : toolChoice,
+                    stream: true,
+                    temperature: 0.15 + (retries * 0.1)
+                });
+                text = streamResult.text;
+                toolCalls = streamResult.toolCalls;
+            } catch (err) {
+                if (err.message === 'RETRY_NEXT_KEY') {
+                    console.log('🔄 [LoadBalancer] Automatically retrying with next healthy key...');
+                    loop--; // repeat this tool loop without consuming an iteration
+                    continue;
+                }
+                throw err;
+            }
 
             if (toolCalls.length > 0) {
                 msgs.push({ role:'assistant', content: text || null, tool_calls: toolCalls.map(tc => ({ id:tc.id, type:'function', function:{ name:tc.name, arguments:tc.args } })) });
@@ -801,6 +852,13 @@ async function askAether(prompt, image = null) {
             conversationHistory.push({ role:'user', content:prompt });
             conversationHistory.push({ role:'assistant', content:text });
             while (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
+
+            // Persist to MemoryVault
+            if (window.MemoryVault) {
+                window.MemoryVault.addMessage('default_session', 'user', prompt);
+                window.MemoryVault.addMessage('default_session', 'assistant', text);
+            }
+
             setSearchProgress(false);
             setStatus('idle');
             return;
