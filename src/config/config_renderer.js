@@ -32,24 +32,78 @@ setupInteraction();
 // ═══════════════════════════════════════════════════════════════
 
 const dom = {
-    panel:       document.getElementById('configPanel'),
-    groqKey:     document.getElementById('groqKey'),
-    tavilyKey:   document.getElementById('tavilyKey'),
-    tavilyGroup: document.getElementById('tavilyGroup'),
-    toggleGroq:  document.getElementById('toggleGroq'),
-    toggleTavily:document.getElementById('toggleTavily'),
-    skipTavily:  document.getElementById('skipTavily'),
-    activateBtn: document.getElementById('activateBtn'),
-    closeBtn:    document.getElementById('closeBtn'),
-    statusLine:  document.getElementById('statusLine'),
-    canvas:      document.getElementById('configParticles'),
-    groqLink:    document.getElementById('groqLink'),
-    tavilyLink:  document.getElementById('tavilyLink'),
-    segUltra:    document.getElementById('segUltra'),
-    segEco:      document.getElementById('segEco'),
-    segSlider:   document.getElementById('segSlider'),
-    perfHint:    document.getElementById('perfHint')
+    panel:              document.getElementById('configPanel'),
+    groqKeysContainer:  document.getElementById('groqKeysContainer'),
+    keyCountSelector:   document.getElementById('keyCountSelector'),
+    tavilyKey:          document.getElementById('tavilyKey'),
+    tavilyGroup:        document.getElementById('tavilyGroup'),
+    toggleTavily:       document.getElementById('toggleTavily'),
+    skipTavily:         document.getElementById('skipTavily'),
+    activateBtn:        document.getElementById('activateBtn'),
+    closeBtn:           document.getElementById('closeBtn'),
+    statusLine:         document.getElementById('statusLine'),
+    canvas:             document.getElementById('configParticles'),
+    groqLink:           document.getElementById('groqLink'),
+    tavilyLink:         document.getElementById('tavilyLink'),
+    segUltra:           document.getElementById('segUltra'),
+    segEco:             document.getElementById('segEco'),
+    segSlider:          document.getElementById('segSlider'),
+    perfHint:           document.getElementById('perfHint')
 };
+
+let currentKeyCount = 1;
+
+/**
+ * Dynamically renders Groq API key input fields.
+ */
+function renderGroqInputs(count, existingKeys = []) {
+    currentKeyCount = count;
+    dom.groqKeysContainer.innerHTML = '';
+    
+    for (let i = 0; i < count; i++) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'input-wrapper groq-input-wrapper';
+        wrapper.style.animationDelay = `${i * 50}ms`;
+        
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.className = 'groq-key-input';
+        input.placeholder = i === 0 ? 'Primary Key (gsk_...)' : `Backup Key #${i+1}`;
+        input.value = existingKeys[i] || '';
+        if (isValidGroqKey(input.value)) input.classList.add('valid');
+        
+        const toggle = document.createElement('button');
+        toggle.className = 'toggle-vis';
+        toggle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        
+        setupToggle(toggle, input);
+        
+        wrapper.appendChild(input);
+        wrapper.appendChild(toggle);
+        dom.groqKeysContainer.appendChild(wrapper);
+
+        // Add live validation
+        input.addEventListener('input', () => {
+            input.classList.remove('valid', 'invalid');
+            if (input.value.length > 5) {
+                input.classList.add(isValidGroqKey(input.value) ? 'valid' : 'invalid');
+            }
+        });
+    }
+}
+
+function setupKeyCountSelector() {
+    const buttons = dom.keyCountSelector.querySelectorAll('.count-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const count = parseInt(btn.dataset.count);
+            const currentValues = Array.from(document.querySelectorAll('.groq-key-input')).map(input => input.value);
+            renderGroqInputs(count, currentValues);
+        });
+    });
+}
 
 // ═══════════════════════════════════════════════════════════════
 // 1. MICRO PARTICLE FIELD (Canvas Background)
@@ -239,8 +293,7 @@ function vanishAndClose() {
 dom.segUltra.addEventListener('click', () => setPerfMode('ultra'));
 dom.segEco.addEventListener('click', () => setPerfMode('eco'));
 
-// Toggle visibility
-setupToggle(dom.toggleGroq, dom.groqKey);
+// Toggle visibility for Tavily (Groq is dynamic now)
 setupToggle(dom.toggleTavily, dom.tavilyKey);
 
 // Skip Tavily
@@ -281,34 +334,41 @@ dom.tavilyLink.addEventListener('click', (e) => {
 // ═══════════════════════════════════════════════════════════════
 
 dom.activateBtn.addEventListener('click', async () => {
-    const groqKey = dom.groqKey.value.trim();
+    const groqInputs = Array.from(document.querySelectorAll('.groq-key-input'));
+    const groqKeys = groqInputs.map(i => i.value.trim()).filter(val => val.length > 0);
     const tavilyKey = tavilySkipped ? '' : dom.tavilyKey.value.trim();
 
-    // Validate format
-    if (!isValidGroqKey(groqKey)) {
-        dom.groqKey.classList.add('invalid');
-        setStatus('Invalid Groq key. Format: gsk_...', 'error');
+    // Validate at least one key exists
+    if (groqKeys.length === 0) {
+        setStatus('Please provide at least one Groq API key.', 'error');
         return;
+    }
+
+    // Validate format for all provided keys
+    for (let i = 0; i < groqKeys.length; i++) {
+        if (!isValidGroqKey(groqKeys[i])) {
+            groqInputs[i].classList.add('invalid');
+            setStatus(`Groq Key #${i+1} format is invalid.`, 'error');
+            return;
+        }
     }
 
     // Loading state
     dom.activateBtn.classList.add('loading');
-    setStatus('Validating...', '');
+    setStatus('Validating Primary Key...', '');
 
-    // Validate against API
-    const valid = await validateGroqKey(groqKey);
+    // Validate the first (primary) key against API
+    const valid = await validateGroqKey(groqKeys[0]);
 
     if (!valid) {
         dom.activateBtn.classList.remove('loading');
-        dom.groqKey.classList.remove('valid');
-        dom.groqKey.classList.add('invalid');
-        setStatus('Groq key rejected by API. Please check it.', 'error');
+        groqInputs[0].classList.add('invalid');
+        setStatus('Primary Groq key rejected by API.', 'error');
         return;
     }
 
     // Success
-    dom.groqKey.classList.remove('invalid');
-    dom.groqKey.classList.add('valid');
+    groqInputs[0].classList.add('valid');
     dom.activateBtn.classList.remove('loading');
     dom.activateBtn.classList.add('success');
     dom.activateBtn.querySelector('.btn-text').textContent = '✓ Activated';
@@ -316,7 +376,7 @@ dom.activateBtn.addEventListener('click', async () => {
 
     // Send keys and performance mode to main process
     ipcRenderer.send('setup-finished', { 
-        groqKey, 
+        groqKeys, 
         perfMode 
     });
 
@@ -346,14 +406,31 @@ dom.tavilyKey.addEventListener('keydown', (e) => {
 async function boot() {
     ConfigParticles.init(20);
     attachPanelTilt(dom.panel, 3);
+    setupKeyCountSelector();
     
     try {
         const config = await ipcRenderer.invoke('get-env-key');
         if (config) {
-            if (config.GROQ_API_KEY) {
-                dom.groqKey.value = config.GROQ_API_KEY;
-                dom.groqKey.classList.add('valid');
+            let groqKeys = [];
+            
+            // Handle legacy single-key string OR new array
+            if (Array.isArray(config.GROQ_API_KEYS)) {
+                groqKeys = config.GROQ_API_KEYS;
+            } else if (config.GROQ_API_KEY) {
+                groqKeys = [config.GROQ_API_KEY];
             }
+
+            const count = Math.max(1, groqKeys.length);
+            
+            // Update UI selector
+            const buttons = dom.keyCountSelector.querySelectorAll('.count-btn');
+            buttons.forEach(btn => {
+                if (parseInt(btn.dataset.count) === count) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            renderGroqInputs(count, groqKeys);
+
             if (config.TAVILY_API_KEY) {
                 dom.tavilyKey.value = config.TAVILY_API_KEY;
                 dom.tavilyKey.classList.add('valid');
@@ -361,10 +438,13 @@ async function boot() {
             if (config.PERF_MODE) {
                 setPerfMode(config.PERF_MODE);
             }
+        } else {
+            renderGroqInputs(1);
         }
-    } catch(e) { console.error('Config load failed:', e); }
-
-    dom.groqKey.focus();
+    } catch(e) { 
+        console.error('Config load failed:', e); 
+        renderGroqInputs(1);
+    }
 }
 
 boot();

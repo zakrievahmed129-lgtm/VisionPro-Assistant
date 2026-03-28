@@ -24,6 +24,8 @@ function getApiKey() {
       const content = fs.readFileSync(CONFIG_PATH, 'utf8');
       if (!content.trim()) return null;
       const data = JSON.parse(content);
+      // Return first key if array, or the string itself for legacy
+      if (Array.isArray(data.GROQ_API_KEYS) && data.GROQ_API_KEYS.length > 0) return data.GROQ_API_KEYS[0];
       return data.GROQ_API_KEY || null;
     }
   } catch (e) {
@@ -47,10 +49,20 @@ function saveApiKey(key) {
       } catch (e) {}
     }
 
-    data.GROQ_API_KEY = typeof key === 'object' ? key.groqKey : key;
-    if (typeof key === 'object' && key.perfMode) {
-      data.PERF_MODE = key.perfMode;
+    if (key && typeof key === 'object') {
+      if (key.groqKeys && Array.isArray(key.groqKeys)) {
+        data.GROQ_API_KEYS = key.groqKeys;
+        data.GROQ_API_KEY = key.groqKeys[0]; // Legacy fallback
+      } else if (key.groqKey) {
+        data.GROQ_API_KEY = key.groqKey;
+      }
+      if (key.perfMode) {
+        data.PERF_MODE = key.perfMode;
+      }
+    } else {
+      data.GROQ_API_KEY = key;
     }
+    
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(data, null, 2));
     console.log("✅ [Main] Configuration saved successfully.");
   } catch (e) {

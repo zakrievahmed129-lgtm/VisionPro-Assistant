@@ -38,17 +38,29 @@
         <!-- Form -->
         <div class="config-form" id="configForm">
 
-            <!-- Groq API Key (required) -->
+            <!-- Groq API Key (Multi-Key Support) -->
             <div class="field-group">
-                <label for="groqKey">Groq API Key <span class="required">•</span></label>
-                <div class="input-wrapper">
-                    <input type="password" id="groqKey" placeholder="gsk_..." autocomplete="off" spellcheck="false" />
-                    <button class="toggle-vis" id="toggleGroq" title="Afficher">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                    </button>
+                <div class="field-header">
+                    <label>Groq API Keys <span class="required">•</span></label>
+                    <div class="key-count-selector" id="keyCountSelector">
+                        <button class="count-btn active" data-count="1">1</button>
+                        <button class="count-btn" data-count="2">2</button>
+                        <button class="count-btn" data-count="3">3</button>
+                        <button class="count-btn" data-count="4">4</button>
+                        <button class="count-btn" data-count="5">5</button>
+                    </div>
+                </div>
+                
+                <div id="groqKeysContainer" class="dynamic-inputs-container">
+                    <div class="input-wrapper groq-input-wrapper" data-index="0">
+                        <input type="password" class="groq-key-input" id="groqKey" placeholder="Primary Key (gsk_...)" autocomplete="off" spellcheck="false" />
+                        <button class="toggle-vis" id="toggleGroq" title="Show">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 

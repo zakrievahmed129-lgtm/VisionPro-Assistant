@@ -12,7 +12,8 @@ const { ipcRenderer } = require('electron');
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
 
-let GROQ_API_KEY = '';
+let GROQ_API_KEYS    = [];
+let currentKeyIndex   = 0;
 const GROQ_TEXT_MODEL   = 'llama-3.3-70b-versatile';
 const GROQ_VISION_MODEL = 'llama-3.2-90b-vision-preview';
 let TAVILY_API_KEY      = ''; // Security: Loaded from secure config.json at runtime
@@ -48,7 +49,13 @@ async function initEnv() {
     try { 
         const config = await ipcRenderer.invoke('get-env-key');
         if (config) {
-            GROQ_API_KEY = config.GROQ_API_KEY;
+            // Load plural keys with single key fallback
+            if (Array.isArray(config.GROQ_API_KEYS) && config.GROQ_API_KEYS.length > 0) {
+                GROQ_API_KEYS = config.GROQ_API_KEYS;
+            } else if (config.GROQ_API_KEY) {
+                GROQ_API_KEYS = [config.GROQ_API_KEY];
+            }
+
             TAVILY_API_KEY = config.TAVILY_API_KEY;
             
             // Apply Performance Mode
@@ -57,6 +64,10 @@ async function initEnv() {
                 console.log('🍃 [VisionPro] Eco Glass mode activated (CPU Optimization).');
             } else {
                 console.log('🚀 [VisionPro] Spatial Ultra mode activated (GPU Max).');
+            }
+            
+            if (GROQ_API_KEYS.length > 0) {
+                console.log(`🔑 [VisionPro] ${GROQ_API_KEYS.length} Groq Key(s) loaded. Rotation active.`);
             }
         }
     }
@@ -655,9 +666,21 @@ function isSearchIntent(p) { const l = p.toLowerCase(); return SEARCH_KW.some(k 
 // ═══════════════════════════════════════════════════════════════
 
 async function streamGroq(payload) {
+    if (GROQ_API_KEYS.length === 0) throw new Error('No Groq API keys configured. Please check setup.');
+
+    // Pick current key from pool
+    const key = GROQ_API_KEYS[currentKeyIndex];
+
+    // Rotate to next key for subsequent calls (Round Robin)
+    if (GROQ_API_KEYS.length > 1) {
+        const prevIdx = currentKeyIndex;
+        currentKeyIndex = (currentKeyIndex + 1) % GROQ_API_KEYS.length;
+        console.log(`🔄 [VisionPro] Request using Key #${prevIdx + 1}. Pool: ${GROQ_API_KEYS.length}`);
+    }
+
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${GROQ_API_KEY}` },
+        headers:{ 'Content-Type':'application/json', 'Authorization':`Bearer ${key}` },
         body: JSON.stringify(payload)
     });
     if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || `Groq ${res.status}`); }
@@ -721,7 +744,7 @@ function assembleUnifiedPrompt(prompt, history) {
 
 async function askAether(prompt, image = null) {
     if (isProcessing) return;
-    if (!GROQ_API_KEY) { setStatus('error'); return; }
+    if (GROQ_API_KEYS.length === 0) { setStatus('error'); return; }
 
     setStatus('processing');
     await vanishResponse();
