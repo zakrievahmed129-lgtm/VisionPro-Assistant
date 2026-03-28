@@ -58,16 +58,9 @@ async function initEnv() {
                 keyPool = [{ key: config.GROQ_API_KEY, isCooling: false, unlockTime: 0 }];
             }
 
-            // Restore Context Memory Vault
-            if (window.MemoryVault) {
-                try {
-                    const ctxMsgs = await window.MemoryVault.getContext('default_session', MAX_HISTORY);
-                    if (ctxMsgs && ctxMsgs.length > 0) {
-                        conversationHistory = ctxMsgs.map(m => ({ role: m.role, content: m.content }));
-                        console.log(`🧠 [MemoryVault] Restored ${conversationHistory.length} messages.`);
-                    }
-                } catch(e) { console.error('Failed to restore memory vault', e); }
-            }
+            // Conversation history is now ephemeral (resets on app close)
+            conversationHistory = [];
+            console.log(`🧠 [VisionPro] Session initialized in ephemeral mode.`);
 
             TAVILY_API_KEY = config.TAVILY_API_KEY;
             
@@ -897,11 +890,8 @@ async function askAether(prompt, image = null) {
             conversationHistory.push({ role:'assistant', content:text });
             while (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
 
-            // Persist to MemoryVault
-            if (window.MemoryVault) {
-                window.MemoryVault.addMessage('default_session', 'user', prompt);
-                window.MemoryVault.addMessage('default_session', 'assistant', text);
-            }
+            // Ephemeral mode: No persistence to MemoryVault
+
 
             setSearchProgress(false);
             setStatus('idle');
@@ -1102,10 +1092,8 @@ async function askOracleAether(prompt) {
         const finalText = ui.responseArea.textContent;
         conversationHistory.push({ role: 'assistant', content: finalText });
         while (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
-        if (window.MemoryVault) {
-            window.MemoryVault.addMessage('default_session', 'user', prompt);
-            window.MemoryVault.addMessage('default_session', 'assistant', finalText);
-        }
+        // Ephemeral mode: No persistence to MemoryVault
+
 
         setSearchProgress(false);
         setStatus('idle');
