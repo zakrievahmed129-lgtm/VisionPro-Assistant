@@ -47,3 +47,10 @@ Desktop.ini
 /tmp/
 *.tmp
 round_image.js
+assets/hero_spatial.png
+
+# Build Meta (Redundant)
+electron-builder.yml
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
