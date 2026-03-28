@@ -36,7 +36,7 @@
   "config": {
     "forge": {
       "packagerConfig": {
-        "name": "Antigravity",
+        "name": "VisionPro-Assistant",
         "asar": true
       },
       "makers": [
@@ -53,6 +53,21 @@
           ]
         }
       ]
+    }
+  },
+  "build": {
+    "appId": "com.visionpro.assistant",
+    "productName": "VisionPro-Assistant",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "${productName}-v${version}.${ext}"
     }
   }
 }
