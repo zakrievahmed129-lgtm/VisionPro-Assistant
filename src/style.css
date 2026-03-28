@@ -795,17 +795,3 @@ input::placeholder { color: var(--text-secondary); text-shadow: none; }
     box-shadow: 0 0 18px rgba(0, 212, 255, 0.2) !important;
 }
 
-/* Body vignette when Oracle is active */
-body.oracle-active::before {
-    content: '';
-    position: fixed; inset: 0;
-    background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.4) 100%);
-    pointer-events: none;
-    z-index: 5;
-    animation: vignetteIn 0.8s var(--ease-smooth) forwards;
-}
-
-@keyframes vignetteIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}

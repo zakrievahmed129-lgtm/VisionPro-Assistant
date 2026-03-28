@@ -38,7 +38,7 @@ ABSOLUTE RULES:
 1. CONCISENESS: Never list your features, PC specs, or system capabilities unless explicitly asked. Respond ONLY to the user's specific request.
 2. RESEARCH: If you lack EXACT info (post-2023), you MUST call search_web immediately. Synthesize data; never point to URLs.
 3. TERMINAL: Fix failing commands instantly. Output complete, production-ready code blocks only.
-4. FILE OPS: You can create_file and read_file on the local filesystem. Use this for saving code, configs, or notes the user requests.
+4. FILE OPS: You can create_file and read_file on the local filesystem. Use this for saving code, configs, or notes the user requests. IMPORTANT: When you create a file, you MUST report its EXACT absolute path to the user!
 5. APP CONTROL: You can open_app to launch whitelisted apps (vscode, notepad, chrome, terminal, explorer, etc.).
 6. TONE: Professional, minimal, and ultra-fast. No small talk beyond a brief greeting if appropriate.`;
 
@@ -649,7 +649,7 @@ async function executeTool(name, args) {
             setSearchProgress(true, '📝 Creating file...');
             const res = await ipcRenderer.invoke('aether-create-file', { filePath: args.file_path, content: args.content });
             setSearchProgress(false);
-            return res.success ? `[OK] File created: ${res.path}` : `[FAILED] ${res.error}`;
+            return res.success ? `[OK] File created successfully. Absolute path on this PC: ${res.path}` : `[FAILED] ${res.error}`;
         }
         if (name === 'read_file') {
             setSearchProgress(true, '📄 Reading file...');
@@ -687,7 +687,7 @@ function getTools() {
         { type:'function', function:{ name:'run_terminal_command', description:'Execute a PowerShell/CMD command on the local system.', parameters:{ type:'object', properties:{ command:{type:'string', description:'The shell command to execute.'} }, required:['command'] } }},
         { type:'function', function:{ name:'search_web', description:'Real-time Internet search. MANDATORY for any post-2023 information, news, prices, or current events.', parameters:{ type:'object', properties:{ query:{type:'string', description:'The search query.'} }, required:['query'] } }},
         { type:'function', function:{ name:'read_web_page', description:'Read the raw text content of a URL.', parameters:{ type:'object', properties:{ url:{type:'string', description:'The URL to read.'} }, required:['url'] } }},
-        { type:'function', function:{ name:'create_file', description:'Create or overwrite a file on the local filesystem. Use for saving code, notes, configs, etc.', parameters:{ type:'object', properties:{ file_path:{type:'string', description:'Absolute or relative path for the file.'}, content:{type:'string', description:'The text content to write.'} }, required:['file_path','content'] } }},
+        { type:'function', function:{ name:'create_file', description:'Create or overwrite a file on the local filesystem. Use for saving code, notes, configs, etc. IMPORTANT: After creating, always tell the user the EXACT absolute path returned in the result so they can find the file on their PC.', parameters:{ type:'object', properties:{ file_path:{type:'string', description:'Absolute path for the file (e.g. C:/Users/user/Desktop/file.txt).'}, content:{type:'string', description:'The text content to write.'} }, required:['file_path','content'] } }},
         { type:'function', function:{ name:'read_file', description:'Read the text content of a local file (max 100KB).', parameters:{ type:'object', properties:{ file_path:{type:'string', description:'Absolute or relative path to read.'} }, required:['file_path'] } }},
         { type:'function', function:{ name:'open_app', description:'Launch a whitelisted application. Allowed: vscode, explorer, notepad, terminal, chrome, firefox, edge, calc, paint.', parameters:{ type:'object', properties:{ app_name:{type:'string', description:'Name of the app to launch (e.g. vscode, notepad, chrome).'} }, required:['app_name'] } }}
     ];
@@ -722,6 +722,9 @@ function getAvailableKey() {
 async function streamGroq(payload) {
     if (keyPool.length === 0) throw new Error('No Groq API keys configured. Please check setup.');
 
+    const silent = payload._silent === true;
+    delete payload._silent;
+
     let key;
     try {
         key = getAvailableKey();
@@ -754,6 +757,7 @@ async function streamGroq(payload) {
         throw new Error(errMsg); 
     }
 
+
     const reader = res.body.getReader();
     const dec = new TextDecoder('utf-8');
     let text='', buf='', toolCalls=[], first=true;
@@ -773,7 +777,7 @@ async function streamGroq(payload) {
                 if (delta.content) {
                     if (first) { setStatus('streaming'); first = false; }
                     text += delta.content;
-                    appendToResponse(delta.content);
+                    if (!silent) appendToResponse(delta.content);
                 }
                 if (delta.tool_calls) {
                     if (first) { setStatus('processing'); first = false; }
@@ -972,7 +976,8 @@ async function askOracleAether(prompt) {
             model: GROQ_TEXT_MODEL,
             messages: [{ role: 'user', content: planPrompt }],
             stream: true,
-            temperature: 0.2
+            temperature: 0.2,
+            _silent: true
         });
 
         let steps = [];
@@ -1016,7 +1021,8 @@ async function askOracleAether(prompt) {
                         tools: loop < MAX_TOOL_LOOPS - 1 ? tools : undefined,
                         tool_choice: loop < MAX_TOOL_LOOPS - 1 ? 'auto' : undefined,
                         stream: true,
-                        temperature: 0.15
+                        temperature: 0.15,
+                        _silent: true
                     });
                     text = result.text;
                     toolCalls = result.toolCalls;
@@ -1047,12 +1053,39 @@ async function askOracleAether(prompt) {
         oracle.logThought('REFLECT', 'Self-critique & synthesis...');
 
         const reflectPrompt = oracle.buildReflectPrompt(SYSTEM_PROMPT, prompt, allResults);
-        await streamGroq({
-            model: GROQ_TEXT_MODEL,
-            messages: [{ role: 'user', content: reflectPrompt }],
-            stream: true,
-            temperature: 0.2
-        });
+        const reflectMsgs = [{ role: 'user', content: reflectPrompt }];
+        const reflectTools = getTools();
+
+        // REFLECT also gets tool access (web search) for fact-checking
+        for (let rLoop = 0; rLoop < MAX_TOOL_LOOPS; rLoop++) {
+            let rText, rToolCalls;
+            try {
+                const rResult = await streamGroq({
+                    model: GROQ_TEXT_MODEL,
+                    messages: reflectMsgs,
+                    tools: rLoop < MAX_TOOL_LOOPS - 1 ? reflectTools : undefined,
+                    tool_choice: rLoop < MAX_TOOL_LOOPS - 1 ? 'auto' : undefined,
+                    stream: true,
+                    temperature: 0.2
+                });
+                rText = rResult.text;
+                rToolCalls = rResult.toolCalls;
+            } catch (err) {
+                if (err.message === 'RETRY_NEXT_KEY') { rLoop--; continue; }
+                throw err;
+            }
+
+            if (rToolCalls.length > 0) {
+                reflectMsgs.push({ role: 'assistant', content: rText || null, tool_calls: rToolCalls.map(tc => ({ id: tc.id, type: 'function', function: { name: tc.name, arguments: tc.args } })) });
+                for (const tc of rToolCalls) {
+                    let args = {}; try { args = JSON.parse(tc.args); } catch (_) { }
+                    const result = await executeTool(tc.name, args);
+                    reflectMsgs.push({ role: 'tool', tool_call_id: tc.id, name: tc.name, content: String(result) });
+                }
+                continue;
+            }
+            break;
+        }
 
         // Persist
         conversationHistory.push({ role: 'user', content: prompt });
