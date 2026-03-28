@@ -700,25 +700,37 @@ async function streamGroq(payload) {
 }
 
 /**
- * Unifies System and Prompt into a single contiguous string.
- * This satisfies the "1 prompt assemblé" requirement.
+ * Unifies System, History, and Prompt into a single contiguous string.
+ * This satisfies the "1 prompt assemblé" requirement while keeping context.
  */
-function assembleUnifiedPrompt(prompt) {
-    return `${SYSTEM_PROMPT}\n\nUSER REQUEST: ${prompt}`;
+function assembleUnifiedPrompt(prompt, history) {
+    let assembled = `### SYSTEM INSTRUCTIONS ###\n${SYSTEM_PROMPT}\n\n`;
+    
+    if (history && history.length > 0) {
+        assembled += `### CONVERSATION HISTORY ###\n`;
+        history.forEach(m => {
+            const role = m.role === 'user' ? 'User' : 'Assistant';
+            assembled += `${role}: ${m.content}\n`;
+        });
+        assembled += `\n`;
+    }
+
+    assembled += `### CURRENT REQUEST ###\n${prompt}`;
+    return assembled;
 }
 
 async function askAether(prompt, image = null) {
     if (isProcessing) return;
     if (!GROQ_API_KEY) { setStatus('error'); return; }
 
-    await vanishResponse();
     setStatus('processing');
+    await vanishResponse();
     charCountSinceShock = 0;
 
     const forceSearch = isSearchIntent(prompt);
     
-    // ASSEMBLE UNIFIED PROMPT (Single contiguous block)
-    const unified = assembleUnifiedPrompt(prompt);
+    // ASSEMBLE UNIFIED PROMPT (Consolidated State with History)
+    const unified = assembleUnifiedPrompt(prompt, conversationHistory);
     const msgs = [];
 
     if (image) {
@@ -770,11 +782,16 @@ async function askAether(prompt, image = null) {
             setStatus('idle');
             return;
         }
-        setSearchProgress(false); setStatus('idle');
     } catch (err) {
         console.error('❌', err);
         appendToResponse(`\n⚠️ ${err.message}`);
-        setSearchProgress(false); setStatus('error');
+        setSearchProgress(false); 
+        setStatus('error');
+    } finally {
+        if (isProcessing) {
+            setSearchProgress(false);
+            setStatus('idle');
+        }
     }
 }
 
@@ -796,8 +813,14 @@ ui.input.addEventListener('input', () => {
     if (ui.input.value.length > 0 && ui.responsePill.classList.contains('has-content') && !isProcessing) hardReset();
 });
 
-ui.input.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') { const t = ui.input.value.trim(); if (t) askAether(t); ui.input.value = ''; }
+ui.input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { 
+        const t = ui.input.value.trim(); 
+        if (t && !isProcessing) { 
+            ui.input.value = ''; 
+            askAether(t); 
+        } 
+    }
 });
 
 ui.sendBtn.addEventListener('click', () => {
