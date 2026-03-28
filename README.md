@@ -67,7 +67,7 @@ npm start
 - **Local Architecture**: Your API keys never leave your machine. They are stored in a secure local `config.json` file (Git-excluded).
 - **Zero-Signature**: The portable executable is digitally unsigned to ensure the binary you download exactly matches the open-source code provided here.
 - **Code Audit**: Users are encouraged to inspect the `/src` folder to verify no third-party data transmission.
-- **VirusTotal**: [Binary Analysis Report](https://www.virustotal.com/gui/file/e0910b4c0e1a6bb469e3ac89a68cee104f2463ecc6f13af14e47135177e23ff3?nocache=1) (67/68 Clean - 1 False Positive).
+- **VirusTotal**: [Binary Analysis Report](https://www.virustotal.com/gui/file/83530f1b50eca81ebe552cdc31196fee0663a2786b76e18e1e0363dbc4b74502?nocache=1) (67/68 Clean - 1 False Positive).
 
 ---
 
