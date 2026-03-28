@@ -59,8 +59,8 @@ body {
     animation: panelBirth 1s var(--ease-spring);
     transform-style: preserve-3d;
     will-change: transform;
-    /* Draggable region */
-    -webkit-app-region: drag;
+    /* Global region: no-drag to allow sub-element interaction */
+    -webkit-app-region: no-drag;
 }
 
 /* Glass noise texture */
@@ -135,6 +135,7 @@ body {
     text-align: center; margin-bottom: 28px;
     -webkit-app-region: drag;
     position: relative; z-index: 5;
+    padding-top: 5px;
 }
 
 .aether-logo {

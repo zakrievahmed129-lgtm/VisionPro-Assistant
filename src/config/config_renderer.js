@@ -303,13 +303,8 @@ dom.skipTavily.addEventListener('click', () => {
     dom.tavilyKey.value = '';
 });
 
-// Live validation glow on Groq key
-dom.groqKey.addEventListener('input', () => {
-    const val = dom.groqKey.value.trim();
-    dom.groqKey.classList.remove('valid', 'invalid');
-    if (val.length > 5) {
-        dom.groqKey.classList.add(val.startsWith('gsk_') ? 'valid' : 'invalid');
-    }
+// Live validation status reset
+dom.tavilyKey.addEventListener('input', () => {
     setStatus('');
 });
 
@@ -389,8 +384,8 @@ dom.activateBtn.addEventListener('click', async () => {
     setTimeout(() => vanishAndClose(), 1000);
 });
 
-// Enter key shortcut
-dom.groqKey.addEventListener('keydown', (e) => {
+// Enter key shortcut for Tavily
+dom.tavilyKey.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') dom.activateBtn.click();
 });
 
