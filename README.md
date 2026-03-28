@@ -1,5 +1,5 @@
 <div align="center">
-<img src="assets/hero_spatial.png" alt="VisionPro Assistant Hero" width="100%" />
+<img src="assets/hero_spatial.png" alt="VisionPro Assistant Hero" width="100%" style="border-radius: 24px;" />
 
 # VISIONPRO — SPATIAL ASSISTANT
 ### The Next Dimension of Human-AI Interaction
