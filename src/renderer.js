@@ -38,9 +38,10 @@ ABSOLUTE RULES:
 1. CONCISENESS: Never list your features, PC specs, or system capabilities unless explicitly asked. Respond ONLY to the user's specific request.
 2. RESEARCH: If you lack EXACT info (post-2023), you MUST call search_web immediately. Synthesize data; never point to URLs.
 3. TERMINAL: Fix failing commands instantly. Output complete, production-ready code blocks only.
-4. FILE OPS: You can create_file and read_file on the local filesystem. Use this for saving code, configs, or notes the user requests. IMPORTANT: When you create a file, you MUST report its EXACT absolute path to the user!
-5. APP CONTROL: You can open_app to launch whitelisted apps (vscode, notepad, chrome, terminal, explorer, etc.).
-6. TONE: Professional, minimal, and ultra-fast. No small talk beyond a brief greeting if appropriate.`;
+    4. FILE OPS: You can create_file and read_file on the local filesystem. Use this for saving code, configs, or notes the user requests. IMPORTANT: When you create a file, you MUST report its EXACT absolute path to the user!
+    5. APP CONTROL: You can open_app to launch whitelisted apps (vscode, notepad, chrome, terminal, explorer, etc.).
+    6. TONE: Professional, minimal, and ultra-fast. No small talk beyond a brief greeting if appropriate.
+    7. ORACLE MODE / ROBLOX: NEVER generate generic Lua code. You MUST use search_web to find the exact, latest Roblox API documentation before writing complex functional logic.`;
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
@@ -223,15 +224,18 @@ let tiltController = null;
  * @param {number} intensity - Rotation degree multiplier
  */
 function attachTilt(el, intensity = 10) {
+    if (!el) return;
     const onMove = (e) => {
         const rect = el.getBoundingClientRect();
         const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
         const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-        el.style.transform = `perspective(800px) rotateY(${dx * intensity}deg) rotateX(${-dy * intensity}deg) scale(1.01)`;
+        el.style.setProperty('--rot-y', `${dx * intensity}deg`);
+        el.style.setProperty('--rot-x', `${-dy * intensity}deg`);
     };
     const onLeave = () => {
         el.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
-        el.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)';
+        el.style.setProperty('--rot-x', '0deg');
+        el.style.setProperty('--rot-y', '0deg');
         setTimeout(() => { el.style.transition = ''; }, 600);
     };
     // Store handlers on element for detach/reattach
@@ -243,7 +247,7 @@ function attachTilt(el, intensity = 10) {
 
 /** Pause all tilt listeners during heavy rendering */
 function pauseTilt() {
-    [ui.inputPill, ui.responsePill].forEach(el => {
+    [ui.inputPill, ui.responsePill, ui.oracleThoughtflow].filter(Boolean).forEach(el => {
         if (el._tiltMove) el.removeEventListener('mousemove', el._tiltMove);
         if (el._tiltLeave) el.removeEventListener('mouseleave', el._tiltLeave);
     });
@@ -251,7 +255,7 @@ function pauseTilt() {
 
 /** Resume tilt listeners after rendering completes */
 function resumeTilt() {
-    [ui.inputPill, ui.responsePill].forEach(el => {
+    [ui.inputPill, ui.responsePill, ui.oracleThoughtflow].filter(Boolean).forEach(el => {
         if (el._tiltMove) el.addEventListener('mousemove', el._tiltMove);
         if (el._tiltLeave) el.addEventListener('mouseleave', el._tiltLeave);
     });
@@ -649,7 +653,13 @@ async function executeTool(name, args) {
             setSearchProgress(true, '📝 Creating file...');
             const res = await ipcRenderer.invoke('aether-create-file', { filePath: args.file_path, content: args.content });
             setSearchProgress(false);
-            return res.success ? `[OK] File created successfully. Absolute path on this PC: ${res.path}` : `[FAILED] ${res.error}`;
+            if (res.success) {
+                const escapedPath = res.path.replace(/\\/g, '\\\\');
+                const linkHTML = `\n<div class="file-link" onclick="require('electron').shell.showItemInFolder('${escapedPath}')">📁 Ouvrir : <b>${res.path.split(/\\|\//).pop()}</b></div>\n`;
+                appendToResponse(linkHTML);
+                return `[OK] File created successfully. Absolute path on this PC: ${res.path}`;
+            }
+            return `[FAILED] ${res.error}`;
         }
         if (name === 'read_file') {
             setSearchProgress(true, '📄 Reading file...');
@@ -1180,6 +1190,7 @@ ParticleEngine.init(isEco ? 10 : 35);
 if (!isEco) {
     attachTilt(ui.inputPill, 6);
     attachTilt(ui.responsePill, 3);
+    attachTilt(ui.oracleThoughtflow, 3);
 }
 
 loadPlugins();

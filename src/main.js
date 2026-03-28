@@ -6,6 +6,7 @@
 const { app, BrowserWindow, ipcMain, desktopCapturer, screen, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { exec } = require('child_process');
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
@@ -258,15 +259,29 @@ ipcMain.handle('run-command', async (_, command) => {
 // Aether Action: Create/Write File (sandboxed to user directories)
 ipcMain.handle('aether-create-file', async (_, { filePath, content }) => {
   try {
-    const resolved = path.resolve(filePath);
+    let resolved = filePath;
+    if (!path.isAbsolute(filePath)) {
+      resolved = path.join(os.homedir(), 'Desktop', filePath);
+    } else {
+      resolved = path.resolve(filePath);
+    }
+    
     // Block writes to system directories
     const systemDirs = ['C:\\Windows', 'C:\\Program Files', 'C:\\Program Files (x86)'];
     if (systemDirs.some(d => resolved.toLowerCase().startsWith(d.toLowerCase()))) {
       return { success: false, error: 'AETHER_SECURITY: Cannot write to system directories.' };
     }
+    
     const dir = path.dirname(resolved);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    
     fs.writeFileSync(resolved, content, 'utf8');
+    
+    // Disk-Check Protocol: Verify the file was actually created
+    if (!fs.existsSync(resolved)) {
+      throw new Error('System failed to write file to disk. Check permissions.');
+    }
+    
     console.log(`📝 [AetherActions] File created: ${resolved}`);
     return { success: true, path: resolved };
   } catch (e) {
