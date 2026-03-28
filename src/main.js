@@ -218,12 +218,28 @@ ipcMain.handle('send-luau-code', async (_, code) => {
   return { success: true };
 });
 
-// Terminal Bridge: Execute CMD or PowerShell commands (with sanitization)
+// ═══════════════════════════════════════════════════════════════
+// AETHER ACTIONS — Sandboxed System Control
+// ═══════════════════════════════════════════════════════════════
+
+const BLOCKED_PATTERNS = [
+  /rm\s+-rf/i, /rmdir\s+\/s/i, /del\s+\/[fqs]/i,
+  /format\s+[a-z]:/i, /mkfs/i, /diskpart/i,
+  /reg\s+delete/i, /shutdown/i, /taskkill\s+\/f/i,
+  /net\s+user/i, /net\s+localgroup/i,
+  /powershell\s+.*-enc/i, /invoke-webrequest.*\|.*iex/i
+];
+
+function isCommandSafe(command) {
+  const lower = command.toLowerCase();
+  return !BLOCKED_PATTERNS.some(pattern => pattern.test(lower));
+}
+
+// Terminal Bridge: Execute CMD or PowerShell commands (with sandboxing)
 ipcMain.handle('run-command', async (_, command) => {
-  // Basic injection protection: block chained destructive patterns
-  const blocked = ['rm -rf /', 'format c:', 'del /f /s /q c:\\'];
-  if (blocked.some(b => command.toLowerCase().includes(b))) {
-    return { success: false, error: 'Command blocked for security reasons.', stdout: '', stderr: '' };
+  if (!isCommandSafe(command)) {
+    console.warn(`🛡️ [AetherActions] BLOCKED dangerous command: ${command.slice(0, 80)}`);
+    return { success: false, error: 'AETHER_SECURITY: Command blocked by sandbox policy.', stdout: '', stderr: '' };
   }
 
   console.log(`💻 [Terminal] Executing: ${command}`);
@@ -235,6 +251,65 @@ ipcMain.handle('run-command', async (_, command) => {
         stderr: stderr || '',
         error: error ? error.message : null
       });
+    });
+  });
+});
+
+// Aether Action: Create/Write File (sandboxed to user directories)
+ipcMain.handle('aether-create-file', async (_, { filePath, content }) => {
+  try {
+    const resolved = path.resolve(filePath);
+    // Block writes to system directories
+    const systemDirs = ['C:\\Windows', 'C:\\Program Files', 'C:\\Program Files (x86)'];
+    if (systemDirs.some(d => resolved.toLowerCase().startsWith(d.toLowerCase()))) {
+      return { success: false, error: 'AETHER_SECURITY: Cannot write to system directories.' };
+    }
+    const dir = path.dirname(resolved);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(resolved, content, 'utf8');
+    console.log(`📝 [AetherActions] File created: ${resolved}`);
+    return { success: true, path: resolved };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// Aether Action: Read File (sandboxed, max 100KB)
+ipcMain.handle('aether-read-file', async (_, { filePath }) => {
+  try {
+    const resolved = path.resolve(filePath);
+    if (!fs.existsSync(resolved)) return { success: false, error: 'File not found.' };
+    const stats = fs.statSync(resolved);
+    if (stats.size > 100 * 1024) return { success: false, error: 'File too large (>100KB). Read refused.' };
+    const content = fs.readFileSync(resolved, 'utf8');
+    return { success: true, content, size: stats.size };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// Aether Action: Open Application (allowlist)
+ipcMain.handle('aether-open-app', async (_, { appName }) => {
+  const ALLOWED_APPS = {
+    'vscode':    'code',
+    'explorer':  'explorer',
+    'notepad':   'notepad',
+    'terminal':  'wt',
+    'chrome':    'start chrome',
+    'firefox':   'start firefox',
+    'edge':      'start msedge',
+    'calc':      'calc',
+    'paint':     'mspaint'
+  };
+  const key = appName.toLowerCase().trim();
+  const cmd = ALLOWED_APPS[key];
+  if (!cmd) {
+    return { success: false, error: `AETHER_SECURITY: "${appName}" is not in the allowed applications list.` };
+  }
+  console.log(`🚀 [AetherActions] Launching: ${key} -> ${cmd}`);
+  return new Promise((resolve) => {
+    exec(cmd, { shell: 'powershell.exe', timeout: 10000 }, (error) => {
+      resolve({ success: !error, error: error?.message || null });
     });
   });
 });

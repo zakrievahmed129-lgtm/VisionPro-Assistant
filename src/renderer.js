@@ -32,13 +32,15 @@ const SEARCH_PHASES = [
     "✨ Synthesizing response..."
 ];
 
-const SYSTEM_PROMPT = `You are VisionPro, a high-performance system assistant. Your primary goal is to provide precise answers with zero fluff.
+const SYSTEM_PROMPT = `You are VisionPro, a high-performance spatial AI assistant with full system control. Your primary goal is to provide precise answers with zero fluff.
 
 ABSOLUTE RULES:
 1. CONCISENESS: Never list your features, PC specs, or system capabilities unless explicitly asked. Respond ONLY to the user's specific request.
 2. RESEARCH: If you lack EXACT info (post-2023), you MUST call search_web immediately. Synthesize data; never point to URLs.
 3. TERMINAL: Fix failing commands instantly. Output complete, production-ready code blocks only.
-4. TONE: Professional, minimal, and ultra-fast. No small talk beyond a brief greeting if appropriate.`;
+4. FILE OPS: You can create_file and read_file on the local filesystem. Use this for saving code, configs, or notes the user requests.
+5. APP CONTROL: You can open_app to launch whitelisted apps (vscode, notepad, chrome, terminal, explorer, etc.).
+6. TONE: Professional, minimal, and ultra-fast. No small talk beyond a brief greeting if appropriate.`;
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
@@ -636,6 +638,25 @@ async function executeTool(name, args) {
             setSearchProgress(false);
             return res.success ? res.text : `Error: ${res.error}`;
         }
+        // ═══ AETHER ACTIONS ═══
+        if (name === 'create_file') {
+            setSearchProgress(true, '📝 Creating file...');
+            const res = await ipcRenderer.invoke('aether-create-file', { filePath: args.file_path, content: args.content });
+            setSearchProgress(false);
+            return res.success ? `[OK] File created: ${res.path}` : `[FAILED] ${res.error}`;
+        }
+        if (name === 'read_file') {
+            setSearchProgress(true, '📄 Reading file...');
+            const res = await ipcRenderer.invoke('aether-read-file', { filePath: args.file_path });
+            setSearchProgress(false);
+            return res.success ? res.content : `[FAILED] ${res.error}`;
+        }
+        if (name === 'open_app') {
+            setSearchProgress(true, '🚀 Launching application...');
+            const res = await ipcRenderer.invoke('aether-open-app', { appName: args.app_name });
+            setSearchProgress(false);
+            return res.success ? `[OK] ${args.app_name} launched.` : `[FAILED] ${res.error}`;
+        }
         return await ipcRenderer.invoke('execute-plugin', { name, args });
     } catch (e) {
         setSearchProgress(false);
@@ -657,9 +678,12 @@ async function loadPlugins() {
 
 function getTools() {
     const core = [
-        { type:'function', function:{ name:'run_terminal_command', description:'Exécute une commande PowerShell/CMD.', parameters:{ type:'object', properties:{ command:{type:'string'} }, required:['command'] } }},
-        { type:'function', function:{ name:'search_web', description:'Real-time Internet search. MANDATORY for post-2023 info.', parameters:{ type:'object', properties:{ query:{type:'string'} }, required:['query'] } }},
-        { type:'function', function:{ name:'read_web_page', description:'Lit le texte brut d\'une URL.', parameters:{ type:'object', properties:{ url:{type:'string'} }, required:['url'] } }}
+        { type:'function', function:{ name:'run_terminal_command', description:'Execute a PowerShell/CMD command on the local system.', parameters:{ type:'object', properties:{ command:{type:'string', description:'The shell command to execute.'} }, required:['command'] } }},
+        { type:'function', function:{ name:'search_web', description:'Real-time Internet search. MANDATORY for any post-2023 information, news, prices, or current events.', parameters:{ type:'object', properties:{ query:{type:'string', description:'The search query.'} }, required:['query'] } }},
+        { type:'function', function:{ name:'read_web_page', description:'Read the raw text content of a URL.', parameters:{ type:'object', properties:{ url:{type:'string', description:'The URL to read.'} }, required:['url'] } }},
+        { type:'function', function:{ name:'create_file', description:'Create or overwrite a file on the local filesystem. Use for saving code, notes, configs, etc.', parameters:{ type:'object', properties:{ file_path:{type:'string', description:'Absolute or relative path for the file.'}, content:{type:'string', description:'The text content to write.'} }, required:['file_path','content'] } }},
+        { type:'function', function:{ name:'read_file', description:'Read the text content of a local file (max 100KB).', parameters:{ type:'object', properties:{ file_path:{type:'string', description:'Absolute or relative path to read.'} }, required:['file_path'] } }},
+        { type:'function', function:{ name:'open_app', description:'Launch a whitelisted application. Allowed: vscode, explorer, notepad, terminal, chrome, firefox, edge, calc, paint.', parameters:{ type:'object', properties:{ app_name:{type:'string', description:'Name of the app to launch (e.g. vscode, notepad, chrome).'} }, required:['app_name'] } }}
     ];
     return [...core, ...loadedPlugins.map(p => ({ type:'function', function:{ name:p.name, description:p.description, parameters:p.parameters } }))];
 }
@@ -932,4 +956,4 @@ if (!isEco) {
 
 loadPlugins();
 playGenesisSequence();
-console.log('⚡ Aether-OS v3.2 — Adaptive Engine — Online.');
+console.log('⚡ AETHER-OS v5.0 — Smart Load Balancer • Memory Vault • Aether Actions — Online.');
