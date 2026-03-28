@@ -5,7 +5,7 @@
 **Vision Pro Aesthetic • Groq Powered • Real-time Performance**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-white?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/Version-4.0.0--Spatial-blueviolet?style=flat-square)](#)
+[![Version](https://img.shields.io/badge/Version-5.0.1--Spatial-blueviolet?style=flat-square)](#)
 <p align="center">
   <img src="https://raw.githubusercontent.com/zakrievahmed129-lgtm/VisionPro-Assistant/main/assets/hero_demo.gif" alt="VisionPro Assistant Spatial Experience" width="800px" style="border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);" />
 </p>
@@ -19,7 +19,7 @@ VisionPro Assistant isn't just an application—it's an intelligent membrane tha
 
 <p align="center">
   <a href="https://github.com/zakrievahmed129-lgtm/VisionPro-Assistant/releases/latest">
-    <img src="https://img.shields.io/badge/Download-Latest%20.exe%20v4.0.0-007AFF?style=for-the-badge&logo=windows&logoColor=white&labelColor=1F2937" alt="🚀 Download for Windows" />
+    <img src="https://img.shields.io/badge/Download-Latest%20.exe%20v5.0.1-007AFF?style=for-the-badge&logo=windows&logoColor=white&labelColor=1F2937" alt="🚀 Download for Windows" />
   </a>
 </p>
 
