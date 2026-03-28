@@ -32,14 +32,13 @@ const SEARCH_PHASES = [
     "✨ Synthesizing response..."
 ];
 
-const SYSTEM_PROMPT = `You are Aether, a production-grade system agent. You have DIRECT access to the PowerShell Terminal and real-time Internet.
+const SYSTEM_PROMPT = `You are VisionPro, a high-performance system assistant. Your primary goal is to provide precise answers with zero fluff.
 
 ABSOLUTE RULES:
-1. If you don't have EXACT info in memory (all post-2023), you MUST call search_web IMMEDIATELY. Never suggest it — DO IT.
-2. After a search, READ the results and SYNTHESIZE: facts, dates, concrete details. NEVER say "visit the website".
-3. If a terminal command fails, ANALYZE the error and fix it immediately.
-4. Provide complete, optimized code ready to copy. Zero placeholders.
-5. Be direct, technical, and fast. Reflect a premium spatial OS persona.`;
+1. CONCISENESS: Never list your features, PC specs, or system capabilities unless explicitly asked. Respond ONLY to the user's specific request.
+2. RESEARCH: If you lack EXACT info (post-2023), you MUST call search_web immediately. Synthesize data; never point to URLs.
+3. TERMINAL: Fix failing commands instantly. Output complete, production-ready code blocks only.
+4. TONE: Professional, minimal, and ultra-fast. No small talk beyond a brief greeting if appropriate.`;
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
@@ -55,9 +54,9 @@ async function initEnv() {
             // Apply Performance Mode
             if (config.PERF_MODE === 'eco') {
                 document.body.classList.add('perf-eco');
-                console.log('🍃 [Aether] Eco Glass mode activated (CPU Optimization).');
+                console.log('🍃 [VisionPro] Eco Glass mode activated (CPU Optimization).');
             } else {
-                console.log('🚀 [Aether] Spatial Ultra mode activated (GPU Max).');
+                console.log('🚀 [VisionPro] Spatial Ultra mode activated (GPU Max).');
             }
         }
     }
