@@ -1,9 +1,9 @@
 /**
- * AETHER-OS — SPATIAL ENGINE v3.2
+ * VISIONPRO-ASSISTANT — SPATIAL ENGINE v4.0
  * Genesis Intro • Oracle Text • Shockwave • Motion Blur
  * 
- * @module AetherRenderer
- * @version 3.2.0
+ * @module VisionProRenderer
+ * @version 4.0.0
  */
 
 const { ipcRenderer } = require('electron');
@@ -60,7 +60,7 @@ async function initEnv() {
             }
         }
     }
-    catch (e) { console.error('[Aether] Key init:', e); }
+    catch (e) { console.error('[VisionPro] Key init:', e); }
 }
 initEnv();
 
@@ -700,23 +700,11 @@ async function streamGroq(payload) {
 }
 
 /**
- * Unifies System, History, and Prompt into a single contiguous string.
+ * Unifies System and Prompt into a single contiguous string.
  * This satisfies the "1 prompt assemblé" requirement.
  */
-function assembleUnifiedPrompt(prompt, history) {
-    let assembled = `### SYSTEM INSTRUCTIONS ###\n${SYSTEM_PROMPT}\n\n`;
-    
-    if (history && history.length > 0) {
-        assembled += `### CONVERSATION HISTORY ###\n`;
-        history.forEach(m => {
-            const role = m.role === 'user' ? 'User' : 'Assistant';
-            assembled += `${role}: ${m.content}\n`;
-        });
-        assembled += `\n`;
-    }
-
-    assembled += `### CURRENT REQUEST ###\n${prompt}`;
-    return assembled;
+function assembleUnifiedPrompt(prompt) {
+    return `${SYSTEM_PROMPT}\n\nUSER REQUEST: ${prompt}`;
 }
 
 async function askAether(prompt, image = null) {
@@ -729,8 +717,8 @@ async function askAether(prompt, image = null) {
 
     const forceSearch = isSearchIntent(prompt);
     
-    // ASSEMBLE UNIFIED PROMPT (Consolidated State)
-    const unified = assembleUnifiedPrompt(prompt, conversationHistory);
+    // ASSEMBLE UNIFIED PROMPT (Single contiguous block)
+    const unified = assembleUnifiedPrompt(prompt);
     const msgs = [];
 
     if (image) {
